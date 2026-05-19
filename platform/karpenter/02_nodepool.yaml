@@ -14,10 +14,12 @@ spec:
       requirements:
         - key: karpenter.k8s.aws/instance-category
           operator: In
-          values: ["c", "m", "r"]
+          # values: ["c", "m", "r"]
+          values: ["t"]
         - key: karpenter.k8s.aws/instance-size
           operator: In
-          values: ["large", "xlarge", "2xlarge"]
+          # values: ["large", "xlarge", "2xlarge"]
+          values: ["micro"]
         - key: kubernetes.io/arch
           operator: In
           values: ["amd64"]
