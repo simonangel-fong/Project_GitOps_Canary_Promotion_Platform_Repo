@@ -1,21 +1,31 @@
-# bootstrap/test.yaml
+# bootstrap/karpenter.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: test
+  name: karpenter
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
     targetRevision: main
-    path: apps/test/
+    path: platform/karpenter
+    directory:
+      recurse: false
   destination:
     server: https://kubernetes.default.svc
-    namespace: backend
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        maxDuration: 3m
+        factor: 2
     syncOptions:
-      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true

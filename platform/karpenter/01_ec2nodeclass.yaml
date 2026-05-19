@@ -1,0 +1,18 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: general-node-class
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  role: CHANGE_ME
+  amiSelectorTerms:
+    - alias: bottlerocket@latest
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: CHANGE_ME
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: CHANGE_ME
+  tags:
+    karpenter.sh/discovery: CHANGE_ME
