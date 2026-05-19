@@ -5,7 +5,7 @@ kind: Application
 metadata:
   name: 11-karpenter-config
   namespace: argocd
-  finalizers: {}
+  # finalizers: []
     # - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "11"
