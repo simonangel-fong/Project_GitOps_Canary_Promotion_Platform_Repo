@@ -22,9 +22,9 @@ spec:
           clusterName: gitops-demo-dev
           clusterEndpoint: https://B4419B2BF5D4DA5D0D1D0526EC5DD3BA.gr7.ca-central-1.eks.amazonaws.com
           interruptionQueue: gitops-demo-dev
-        # serviceAccount:
-        #   annotations:
-        #     eks.amazonaws.com/role-arn: CHANGE_ME
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::099139718958:role/gitops-demo-dev-cluster-role
         controller:
           resources:
             requests:
