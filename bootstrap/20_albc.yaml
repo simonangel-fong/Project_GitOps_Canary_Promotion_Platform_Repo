@@ -1,44 +1,44 @@
-# bootstrap/20_albc.yaml
-# Installs the AWS Load Balancer Controller via Helm (eks-charts).
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: 20-albc
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "20"
-spec:
-  project: default
-  source:
-    repoURL: https://aws.github.io/eks-charts
-    chart: aws-load-balancer-controller
-    targetRevision: 3.3.0
-    helm:
-      releaseName: albc
-      values: |
-        clusterName: gitops-demo-dev
-        region: ca-central-1
-        vpcId: vpc-0ac351b5e5787f36a
-        serviceAccount:
-          create: true
-          name: aws-load-balancer-controller
-          annotations:
-            eks.amazonaws.com/role-arn: arn:aws:iam::099139718958:role/gitops-demo-dev-albc
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kube-system
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=false
+# # bootstrap/20_albc.yaml
+# # Installs the AWS Load Balancer Controller via Helm (eks-charts).
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: 20-albc
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "20"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://aws.github.io/eks-charts
+#     chart: aws-load-balancer-controller
+#     targetRevision: 3.3.0
+#     helm:
+#       releaseName: albc
+#       values: |
+#         clusterName: gitops-demo-dev
+#         region: ca-central-1
+#         vpcId: vpc-0ac351b5e5787f36a
+#         serviceAccount:
+#           create: true
+#           name: aws-load-balancer-controller
+#           annotations:
+#             eks.amazonaws.com/role-arn: arn:aws:iam::099139718958:role/gitops-demo-dev-albc
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: kube-system
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=false
