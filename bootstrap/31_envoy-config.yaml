@@ -1,33 +1,33 @@
-# bootstrap/31_envoy-config.yaml
-# Applies the GatewayClass, EnvoyProxy, and Gateway after the controller is up.
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: 31-envoy-config
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "31"
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-    targetRevision: main
-    path: platform/envoy
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: envoy-gateway-system
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=false
+# # bootstrap/31_envoy-config.yaml
+# # Applies the GatewayClass, EnvoyProxy, and Gateway after the controller is up.
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: 31-envoy-config
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "31"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+#     targetRevision: main
+#     path: platform/envoy
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: envoy-gateway-system
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=false
