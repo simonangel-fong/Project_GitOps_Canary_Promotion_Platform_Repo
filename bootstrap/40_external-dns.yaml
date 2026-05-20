@@ -21,6 +21,9 @@ spec:
         provider:
           name: cloudflare
 
+        extraArgs:
+          - --cloudflare-proxied
+
         sources:
           - service
           - gateway-httproute
