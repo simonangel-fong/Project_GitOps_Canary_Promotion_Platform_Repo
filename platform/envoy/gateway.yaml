@@ -28,16 +28,16 @@ spec:
           service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
           service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: eg
-spec:
-  gatewayClassName: eg
-  listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      allowedRoutes:
-        namespaces:
-          from: All
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: Gateway
+# metadata:
+#   name: eg
+# spec:
+#   gatewayClassName: eg
+#   listeners:
+#     - name: http
+#       protocol: HTTP
+#       port: 80
+#       allowedRoutes:
+#         namespaces:
+#           from: All
