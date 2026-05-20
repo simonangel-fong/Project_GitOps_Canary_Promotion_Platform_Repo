@@ -1,0 +1,92 @@
+# bootstrap/60_prometheus-grafana.yaml
+# Installs kube-prometheus-stack (Prometheus, Grafana, Alertmanager, exporters) via Helm.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: 60-prometheus-grafana
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "60"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 84.5.0
+    helm:
+      releaseName: prometheus-grafana
+      values: |
+        # Prometheus
+        prometheus:
+          prometheusSpec:
+            retention: 24h
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
+            # if a StorageClass is available in the cluster
+            # storageSpec:
+            #   volumeClaimTemplate:
+            #     spec:
+            #       accessModes: ["ReadWriteOnce"]
+            #       resources:
+            #         requests:
+            #           storage: 20Gi
+
+        # Grafana
+        grafana:
+          # adminPassword: ""       # add pwd
+          service:
+            type: NodePort
+          persistence:
+            enabled: false          # set to true + add storageClassName when PVs exist
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          # Auto-load dashboards from ConfigMaps labelled grafana_dashboard=1
+          sidecar:
+            dashboards:
+              enabled: true
+
+        # Alertmanager
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
+
+        # Exporters
+        prometheus-node-exporter:
+          enabled: true
+
+        kube-state-metrics:
+          enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        maxDuration: 3m
+        factor: 2
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true
