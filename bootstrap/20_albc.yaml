@@ -20,7 +20,7 @@ spec:
       values: |
         clusterName: gitops-demo-dev
         region: ca-central-1
-        vpcId: vpc-0ac351b5e5787f36a
+        vpcId: vpc-019737d8f56bb7523
         serviceAccount:
           create: true
           name: aws-load-balancer-controller
