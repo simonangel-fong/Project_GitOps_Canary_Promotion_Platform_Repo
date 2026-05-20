@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: frontend
+resources:
+  - ../../base
+images:
+  # CI writes newTag (and adds digest:) via `kustomize edit set image` on each merge to main.
+  - name: gitops-demo-frontend
+    newName: docker.io/simonangelfong/gitops-demo-frontend
+    newTag: app-v0.2.0
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/instance: gitops-demo-frontend-dev
+      env: dev
+patches:
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: gitops-demo-frontend
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+      - op: replace
+        path: /spec/metrics/0/resource/target/averageUtilization
+        value: 80
+  - target:
+      kind: HTTPRoute
+      name: gitops-demo-frontend
+    patch: |-
+      - op: replace
+        path: /spec/hostnames/0
+        value: gitops-dev.arguswatcher.net

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 10_serviceaccount.yaml
+  - 20_rollout.yaml
+  - 30_service.yaml
+  - 50_hpa.yaml
+  - 60_netpol_default_deny.yaml
+  - 61_netpol_allow_dns.yaml
+  - 62_netpol_allow_ingress_from_frontend.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/name: gitops-demo-backend
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/part-of: gitops-demo

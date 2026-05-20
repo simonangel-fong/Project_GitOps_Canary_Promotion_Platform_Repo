@@ -1,7 +1,0 @@
-# apps/test/cm.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test-cm
-data:
-  player_initial_lives: "3"
