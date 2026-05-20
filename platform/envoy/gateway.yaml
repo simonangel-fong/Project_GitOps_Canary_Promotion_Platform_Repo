@@ -10,23 +10,23 @@ spec:
     name: eg-nlb
     namespace: envoy-gateway-system
 ---
-# apiVersion: gateway.envoyproxy.io/v1alpha1
-# kind: EnvoyProxy
-# metadata:
-#   name: eg-nlb
-#   namespace: envoy-gateway-system
-# spec:
-#   provider:
-#     type: Kubernetes
-#     kubernetes:
-#       envoyService:
-#         annotations:
-#           service.beta.kubernetes.io/aws-load-balancer-name: gitops-demo-dev
-#           service.beta.kubernetes.io/aws-load-balancer-type: external
-#           service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-#           service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-#           service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
-#           service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: eg-nlb
+  namespace: envoy-gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-name: gitops-demo-dev
+          service.beta.kubernetes.io/aws-load-balancer-type: external
+          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+          service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+          service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /
 # ---
 # apiVersion: gateway.networking.k8s.io/v1
 # kind: Gateway
