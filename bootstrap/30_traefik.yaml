@@ -1,93 +1,93 @@
-# # bootstrap/30_traefik.yaml
-# # Installs Traefik via Helm (traefik charts).
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: 30-traefik
-#   namespace: argocd
-#   finalizers:
-#     - resources-finalizer.argocd.argoproj.io
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "30"
-# spec:
-#   project: default
-#   source:
-#     repoURL: https://traefik.github.io/charts
-#     chart: traefik
-#     targetRevision: 40.0.0
-#     helm:
-#       releaseName: traefik
-#       values: |
-#         providers:
-#           kubernetesCRD:
-#             allowCrossNamespace: true
-#           kubernetesGateway:
-#             enabled: true
+# bootstrap/30_traefik.yaml
+# Installs Traefik via Helm (traefik charts).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: 30-traefik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 40.0.0
+    helm:
+      releaseName: traefik
+      values: |
+        providers:
+          kubernetesCRD:
+            allowCrossNamespace: true
+          kubernetesGateway:
+            enabled: true
 
-#         gateway:
-#           listeners:
-#             web:
-#               namespacePolicy:
-#                 from: All
-#             websecure:
-#               port: 8443
-#               protocol: HTTP
-#               namespacePolicy:
-#                 from: All
+        gateway:
+          listeners:
+            web:
+              namespacePolicy:
+                from: All
+            websecure:
+              port: 8443
+              protocol: HTTP
+              namespacePolicy:
+                from: All
 
-#         ports:
-#           websecure:
-#             # Disable in-Traefik TLS: the NLB already terminated TLS upstream.
-#             http:
-#               tls:
-#                 enabled: false
+        ports:
+          websecure:
+            # Disable in-Traefik TLS: the NLB already terminated TLS upstream.
+            http:
+              tls:
+                enabled: false
 
-#         deployment:
-#           replicas: 2
+        deployment:
+          replicas: 2
 
-#         service:
-#           enabled: true
-#           type: LoadBalancer
-#           annotations:
-#             service.beta.kubernetes.io/aws-load-balancer-name: gitops-demo-dev
-#             service.beta.kubernetes.io/aws-load-balancer-type: "external"
-#             service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
-#             service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-#             service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/"
-#             service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
-#             # service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "<REPLACE_WITH_TAGS_CSV>"
-#             # NLB TLS termination using the ACM cert (only :443 does TLS; :80 stays plain).
-#             # service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "<REPLACE_WITH_ACM_CERT_ARN>"
-#             # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
-#             # external-dns.alpha.kubernetes.io/hostname: "<REPLACE_WITH_DNS_NAME>"
-#             # external-dns.alpha.kubernetes.io/ttl: "120"
+        service:
+          enabled: true
+          type: LoadBalancer
+          annotations:
+            service.beta.kubernetes.io/aws-load-balancer-name: gitops-demo-dev
+            service.beta.kubernetes.io/aws-load-balancer-type: "external"
+            service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+            service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+            service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/"
+            service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+            # service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "<REPLACE_WITH_TAGS_CSV>"
+            # NLB TLS termination using the ACM cert (only :443 does TLS; :80 stays plain).
+            # service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "<REPLACE_WITH_ACM_CERT_ARN>"
+            # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+            # external-dns.alpha.kubernetes.io/hostname: "<REPLACE_WITH_DNS_NAME>"
+            # external-dns.alpha.kubernetes.io/ttl: "120"
 
-#         resources:
-#           requests:
-#             cpu: 100m
-#             memory: 128Mi
-#           limits:
-#             cpu: 300m
-#             memory: 256Mi
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
 
-#         logs:
-#           general:
-#             level: INFO
-#           access:
-#             enabled: true
-#   destination:
-#     server: https://kubernetes.default.svc
-#     namespace: traefik
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-#     retry:
-#       limit: 5
-#       backoff:
-#         duration: 10s
-#         maxDuration: 3m
-#         factor: 2
-#     syncOptions:
-#       - ServerSideApply=true
-#       - CreateNamespace=true
+        logs:
+          general:
+            level: INFO
+          access:
+            enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        maxDuration: 3m
+        factor: 2
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true
