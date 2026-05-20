@@ -23,6 +23,7 @@ spec:
 
         sources:
           - service
+          - gateway-httproute
 
         policy: sync
         registry: txt
