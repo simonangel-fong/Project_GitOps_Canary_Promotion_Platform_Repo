@@ -3,7 +3,7 @@ kind: NodePool
 metadata:
   name: general-node-pool
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "13"
 spec:
   template:
     spec:

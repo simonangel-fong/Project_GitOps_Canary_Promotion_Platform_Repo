@@ -1,102 +1,102 @@
-# bootstrap/70_argocd-notifications.yaml
-# Installs argo-cd-notifications via the community Helm chart.
-# Slack token is supplied out-of-band via the `argocd-notifications-secret`
-# Secret in the `argocd` namespace (see README / one-time setup).
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-70-argocd-notifications
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "70"
-spec:
-  project: default
-  source:
-    repoURL: https://argoproj.github.io/argo-helm
-    chart: argocd-notifications
-    targetRevision: 1.8.1
-    helm:
-      releaseName: argocd-notifications
-      values: |
-        # Slack integration. Token is read from the `argocd-notifications-secret`
-        # Secret (key: slack-token) which must be created manually — do NOT
-        # commit the token to git.
-        notifiers:
-          service.slack: |
-            token: $slack-token
+# # bootstrap/70_argocd-notifications.yaml
+# # Installs argo-cd-notifications via the community Helm chart.
+# # Slack token is supplied out-of-band via the `argocd-notifications-secret`
+# # Secret in the `argocd` namespace (see README / one-time setup).
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-70-argocd-notifications
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "70"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://argoproj.github.io/argo-helm
+#     chart: argocd-notifications
+#     targetRevision: 1.8.1
+#     helm:
+#       releaseName: argocd-notifications
+#       values: |
+#         # Slack integration. Token is read from the `argocd-notifications-secret`
+#         # Secret (key: slack-token) which must be created manually — do NOT
+#         # commit the token to git.
+#         notifiers:
+#           service.slack: |
+#             token: $slack-token
 
-        # Built-in triggers fire when an Application transitions to the
-        # described state. See:
-        # https://argo-cd.readthedocs.io/en/stable/operator-manual/notifications/triggers/
-        triggers:
-          trigger.on-deployed: |
-            - description: Application is synced and healthy.
-              send: [app-deployed]
-              when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
-          trigger.on-health-degraded: |
-            - description: Application has degraded.
-              send: [app-health-degraded]
-              when: app.status.health.status == 'Degraded'
-          trigger.on-sync-failed: |
-            - description: Application sync has failed.
-              send: [app-sync-failed]
-              when: app.status.operationState.phase in ['Error', 'Failed']
+#         # Built-in triggers fire when an Application transitions to the
+#         # described state. See:
+#         # https://argo-cd.readthedocs.io/en/stable/operator-manual/notifications/triggers/
+#         triggers:
+#           trigger.on-deployed: |
+#             - description: Application is synced and healthy.
+#               send: [app-deployed]
+#               when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+#           trigger.on-health-degraded: |
+#             - description: Application has degraded.
+#               send: [app-health-degraded]
+#               when: app.status.health.status == 'Degraded'
+#           trigger.on-sync-failed: |
+#             - description: Application sync has failed.
+#               send: [app-sync-failed]
+#               when: app.status.operationState.phase in ['Error', 'Failed']
 
-        templates:
-          template.app-deployed: |
-            message: |
-              :white_check_mark: Application *{{.app.metadata.name}}* is now running new version.
-            slack:
-              attachments: |
-                [{
-                  "title": "{{ .app.metadata.name}}",
-                  "color": "#18be52",
-                  "fields": [
-                    { "title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true },
-                    { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true },
-                    { "title": "Revision", "value": "{{.app.status.sync.revision}}", "short": true }
-                  ]
-                }]
-          template.app-health-degraded: |
-            message: |
-              :warning: Application *{{.app.metadata.name}}* has degraded.
-            slack:
-              attachments: |
-                [{
-                  "title": "{{ .app.metadata.name}}",
-                  "color": "#f4c030",
-                  "fields": [
-                    { "title": "Health Status", "value": "{{.app.status.health.status}}", "short": true },
-                    { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true }
-                  ]
-                }]
-          template.app-sync-failed: |
-            message: |
-              :x: Application *{{.app.metadata.name}}* sync failed: {{.app.status.operationState.message}}
-            slack:
-              attachments: |
-                [{
-                  "title": "{{ .app.metadata.name}}",
-                  "color": "#E96D76",
-                  "fields": [
-                    { "title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true },
-                    { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true }
-                  ]
-                }]
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
+#         templates:
+#           template.app-deployed: |
+#             message: |
+#               :white_check_mark: Application *{{.app.metadata.name}}* is now running new version.
+#             slack:
+#               attachments: |
+#                 [{
+#                   "title": "{{ .app.metadata.name}}",
+#                   "color": "#18be52",
+#                   "fields": [
+#                     { "title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true },
+#                     { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true },
+#                     { "title": "Revision", "value": "{{.app.status.sync.revision}}", "short": true }
+#                   ]
+#                 }]
+#           template.app-health-degraded: |
+#             message: |
+#               :warning: Application *{{.app.metadata.name}}* has degraded.
+#             slack:
+#               attachments: |
+#                 [{
+#                   "title": "{{ .app.metadata.name}}",
+#                   "color": "#f4c030",
+#                   "fields": [
+#                     { "title": "Health Status", "value": "{{.app.status.health.status}}", "short": true },
+#                     { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true }
+#                   ]
+#                 }]
+#           template.app-sync-failed: |
+#             message: |
+#               :x: Application *{{.app.metadata.name}}* sync failed: {{.app.status.operationState.message}}
+#             slack:
+#               attachments: |
+#                 [{
+#                   "title": "{{ .app.metadata.name}}",
+#                   "color": "#E96D76",
+#                   "fields": [
+#                     { "title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true },
+#                     { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true }
+#                   ]
+#                 }]
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: argocd
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true

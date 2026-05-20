@@ -3,7 +3,7 @@ kind: EC2NodeClass
 metadata:
   name: general-node-class
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "12"
 spec:
   role: "gitops-demo-dev"
   amiSelectorTerms:
