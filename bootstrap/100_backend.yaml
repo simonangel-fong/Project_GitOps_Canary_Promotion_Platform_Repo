@@ -1,0 +1,28 @@
+# bootstrap/100_backend.yaml
+# Wave 100 — backend application. Depends on the full platform (waves 1–90)
+# being healthy: namespaces, ESO-managed Secrets, Karpenter capacity,
+# ALBC, Envoy Gateway, external-dns, and Argo Rollouts CRDs.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-100-backend
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "100"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+    targetRevision: main
+    path: apps/backend/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: backend
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
