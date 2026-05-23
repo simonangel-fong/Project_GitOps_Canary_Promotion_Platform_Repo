@@ -22,7 +22,6 @@ spec:
       values: |
         settings:
           clusterName: gitops-demo-dev
-          # clusterEndpoint: https://6517E58B976EA67A2B34D166F2868165.gr7.ca-central-1.eks.amazonaws.com
           clusterEndpoint: "{{ index .metadata.annotations "eks.clusterEndpoint" }}"
           interruptionQueue: Karpenter-gitops-demo-dev
 
@@ -50,3 +49,7 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - CreateNamespace=false
+
+
+
+# clusterEndpoint: https://6517E58B976EA67A2B34D166F2868165.gr7.ca-central-1.eks.amazonaws.com
