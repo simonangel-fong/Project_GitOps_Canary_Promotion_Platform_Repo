@@ -5,15 +5,15 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "12"
 spec:
-  role: "gitops-demo-dev"
+  role: {{ .Values.clusterName | quote }}
   amiSelectorTerms:
     - alias: bottlerocket@latest
   subnetSelectorTerms:
     - tags:
-        karpenter.sh/discovery: "gitops-demo-dev"
+        karpenter.sh/discovery: {{ .Values.clusterName | quote }}
   securityGroupSelectorTerms:
     - tags:
-        karpenter.sh/discovery: "gitops-demo-dev"
+        karpenter.sh/discovery: {{ .Values.clusterName | quote }}
   tags:
-    Name: karpenter/gitops-demo-dev/general
+    Name: karpenter/{{ .Values.clusterName }}/general
     managed-by: karpenter
