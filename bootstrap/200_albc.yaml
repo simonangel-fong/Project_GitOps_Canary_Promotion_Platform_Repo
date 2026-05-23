@@ -1,57 +1,57 @@
-# # bootstrap/20_albc.yaml
-# # Wave 20 — installs the AWS Load Balancer Controller via Helm (eks-charts).
-# apiVersion: argoproj.io/v1alpha1
-# kind: ApplicationSet
-# metadata:
-#   name: albc
-#   namespace: argocd
-#   finalizers:
-#     - resources-finalizer.argocd.argoproj.io
-# spec:
-#   goTemplate: true
-#   # goTemplateOptions: ["missingkey=error"]
-#   generators:
-#   - clusters: {} # Automatically use all clusters defined within Argo CD
-#   template:
-#     metadata:
-#       name: platform-200-albc
-#       namespace: argocd
-#       finalizers:
-#         - resources-finalizer.argocd.argoproj.io
-#       annotations:
-#         argocd.argoproj.io/sync-wave: "200"
-#     spec:
-#       project: default
-#       source:
-#         repoURL: https://aws.github.io/eks-charts
-#         chart: aws-load-balancer-controller
-#         targetRevision: 3.3.0
-#         helm:
-#           releaseName: albc
-#           values: |
-#             clusterName: '{{ index .metadata.annotations "eks.cluster-name" }}'
-#             region: '{{ index .metadata.annotations "aws-region" }}'
-#             vpcId: '{{ index .metadata.annotations "vpc.vpc-id" }}'
+# bootstrap/20_albc.yaml
+# Wave 20 — installs the AWS Load Balancer Controller via Helm (eks-charts).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: albc
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  goTemplate: true
+  # goTemplateOptions: ["missingkey=error"]
+  generators:
+  - clusters: {} # Automatically use all clusters defined within Argo CD
+  template:
+    metadata:
+      name: platform-200-albc
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "200"
+    spec:
+      project: default
+      source:
+        repoURL: https://aws.github.io/eks-charts
+        chart: aws-load-balancer-controller
+        targetRevision: 3.3.0
+        helm:
+          releaseName: albc
+          values: |
+            clusterName: '{{ index .metadata.annotations "eks.cluster-name" }}'
+            region: '{{ index .metadata.annotations "aws-region" }}'
+            vpcId: '{{ index .metadata.annotations "vpc.vpc-id" }}'
  
-#             serviceAccount:
-#               create: true
-#               name: aws-load-balancer-controller
-#               annotations:
-#                 eks.amazonaws.com/role-arn: '{{ index .metadata.annotations "albc.role-arn" }}'
+            serviceAccount:
+              create: true
+              name: aws-load-balancer-controller
+              annotations:
+                eks.amazonaws.com/role-arn: '{{ index .metadata.annotations "albc.role-arn" }}'
 
-#       destination:
-#         server: https://kubernetes.default.svc
-#         namespace: kube-system
-#       syncPolicy:
-#         automated:
-#           prune: true
-#           selfHeal: true
-#         retry:
-#           limit: 5
-#           backoff:
-#             duration: 10s
-#             maxDuration: 3m
-#             factor: 2
-#         syncOptions:
-#           - ServerSideApply=true
-#           - CreateNamespace=false
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: kube-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            maxDuration: 3m
+            factor: 2
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=false
