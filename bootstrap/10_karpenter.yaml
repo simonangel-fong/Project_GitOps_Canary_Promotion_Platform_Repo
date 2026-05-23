@@ -1,9 +1,5 @@
 # bootstrap/10_karpenter.yaml
 # Wave 10 — installs the Karpenter controller via Helm (OCI chart).
-# IAM is supplied via EKS Pod Identity Association (provisioned in the infra repo),
-# so no serviceAccount annotation is needed here.
-
-
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:

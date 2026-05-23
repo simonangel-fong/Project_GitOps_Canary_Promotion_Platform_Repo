@@ -1,8 +1,5 @@
 # bootstrap/20_albc.yaml
 # Wave 20 — installs the AWS Load Balancer Controller via Helm (eks-charts).
-# Auth uses IRSA: the role is provisioned in the infra repo and its ARN
-# is annotated on the aws-load-balancer-controller ServiceAccount below.
-
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -41,7 +38,7 @@ spec:
               name: aws-load-balancer-controller
               annotations:
                 eks.amazonaws.com/role-arn: '{{ index .metadata.annotations "albc.role-arn" }}'
-                
+
       destination:
         server: https://kubernetes.default.svc
         namespace: kube-system
