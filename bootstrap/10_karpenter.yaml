@@ -1,51 +1,51 @@
-# bootstrap/10_karpenter.yaml
-# Wave 10 — installs the Karpenter controller via Helm (OCI chart).
-# IAM is supplied via EKS Pod Identity Association (provisioned in the infra repo),
-# so no serviceAccount annotation is needed here.
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-10-karpenter
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "10"
-spec:
-  project: default
-  source:
-    repoURL: public.ecr.aws/karpenter
-    chart: karpenter
-    targetRevision: 1.12.1
-    helm:
-      releaseName: karpenter
-      values: |
-        settings:
-          clusterName: gitops-demo-dev
-          clusterEndpoint: https://6517E58B976EA67A2B34D166F2868165.gr7.ca-central-1.eks.amazonaws.com
-          interruptionQueue: Karpenter-gitops-demo-dev
+# # bootstrap/10_karpenter.yaml
+# # Wave 10 — installs the Karpenter controller via Helm (OCI chart).
+# # IAM is supplied via EKS Pod Identity Association (provisioned in the infra repo),
+# # so no serviceAccount annotation is needed here.
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-10-karpenter
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "10"
+# spec:
+#   project: default
+#   source:
+#     repoURL: public.ecr.aws/karpenter
+#     chart: karpenter
+#     targetRevision: 1.12.1
+#     helm:
+#       releaseName: karpenter
+#       values: |
+#         settings:
+#           clusterName: gitops-demo-dev
+#           clusterEndpoint: https://6517E58B976EA67A2B34D166F2868165.gr7.ca-central-1.eks.amazonaws.com
+#           interruptionQueue: Karpenter-gitops-demo-dev
 
-        controller:
-          resources:
-            requests:
-              cpu: 200m
-              memory: 512Mi
-            limits:
-              cpu: 500m
-              memory: 1Gi
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kube-system
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=false
+#         controller:
+#           resources:
+#             requests:
+#               cpu: 200m
+#               memory: 512Mi
+#             limits:
+#               cpu: 500m
+#               memory: 1Gi
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: kube-system
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=false

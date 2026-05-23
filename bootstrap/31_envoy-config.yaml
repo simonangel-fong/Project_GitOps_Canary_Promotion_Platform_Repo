@@ -1,34 +1,34 @@
-# bootstrap/31_envoy-config.yaml
-# Wave 31 — applies the GatewayClass, EnvoyProxy, and Gateway after the
-# Envoy Gateway controller (and its CRDs) come up at wave 30.
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-31-envoy-config
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "31"
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-    targetRevision: main
-    path: platform/envoy
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: envoy-gateway-system
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=false
+# # bootstrap/31_envoy-config.yaml
+# # Wave 31 — applies the GatewayClass, EnvoyProxy, and Gateway after the
+# # Envoy Gateway controller (and its CRDs) come up at wave 30.
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-31-envoy-config
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "31"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+#     targetRevision: main
+#     path: platform/envoy
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: envoy-gateway-system
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=false

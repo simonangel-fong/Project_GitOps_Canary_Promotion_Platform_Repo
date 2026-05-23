@@ -1,71 +1,71 @@
-# bootstrap/40_external-dns.yaml
-# Wave 40 — installs ExternalDNS via Helm (kubernetes-sigs charts).
-# Reads the Cloudflare API token from the `cloudflare-api-key` Secret,
-# which is materialised by the ExternalSecret at wave 6 (ESO config).
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-40-external-dns
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "40"
-spec:
-  project: default
-  source:
-    repoURL: https://kubernetes-sigs.github.io/external-dns
-    chart: external-dns
-    targetRevision: 1.21.1
-    helm:
-      releaseName: external-dns
-      values: |
-        provider:
-          name: cloudflare
+# # bootstrap/40_external-dns.yaml
+# # Wave 40 — installs ExternalDNS via Helm (kubernetes-sigs charts).
+# # Reads the Cloudflare API token from the `cloudflare-api-key` Secret,
+# # which is materialised by the ExternalSecret at wave 6 (ESO config).
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-40-external-dns
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "40"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://kubernetes-sigs.github.io/external-dns
+#     chart: external-dns
+#     targetRevision: 1.21.1
+#     helm:
+#       releaseName: external-dns
+#       values: |
+#         provider:
+#           name: cloudflare
 
-        extraArgs:
-          - --cloudflare-proxied
+#         extraArgs:
+#           - --cloudflare-proxied
 
-        sources:
-          - service
-          - gateway-httproute
+#         sources:
+#           - service
+#           - gateway-httproute
 
-        policy: sync
-        registry: txt
-        txtOwnerId: gitops-demo-dev
+#         policy: sync
+#         registry: txt
+#         txtOwnerId: gitops-demo-dev
 
-        domainFilters:
-          - arguswatcher.net
+#         domainFilters:
+#           - arguswatcher.net
 
-        env:
-          - name: CF_API_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: cloudflare-api-key
-                key: cloudflare_api_key
+#         env:
+#           - name: CF_API_TOKEN
+#             valueFrom:
+#               secretKeyRef:
+#                 name: cloudflare-api-key
+#                 key: cloudflare_api_key
 
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi
+#         resources:
+#           requests:
+#             cpu: 50m
+#             memory: 64Mi
+#           limits:
+#             cpu: 200m
+#             memory: 128Mi
 
-        logLevel: info
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: external-dns
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=true
+#         logLevel: info
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: external-dns
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=true
