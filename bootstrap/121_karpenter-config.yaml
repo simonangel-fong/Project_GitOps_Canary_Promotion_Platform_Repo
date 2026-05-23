@@ -3,7 +3,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: platform-21-karpenter-config
+  name: platform-121-karpenter-config
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io

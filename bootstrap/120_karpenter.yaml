@@ -14,7 +14,7 @@ spec:
   - clusters: {} # Automatically use all clusters defined within Argo CD
   template:
     metadata:
-      name: platform-20-karpenter
+      name: platform-120-karpenter
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io
