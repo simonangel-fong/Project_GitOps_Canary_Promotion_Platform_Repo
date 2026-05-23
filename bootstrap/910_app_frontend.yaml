@@ -1,26 +1,26 @@
-# # bootstrap/110_frontend.yaml
-# # Wave 110 — frontend application. Depends on the full platform (waves 1–90)
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: app-110-frontend
-#   namespace: argocd
-#   finalizers:
-#     - resources-finalizer.argocd.argoproj.io
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "110"
-# spec:
-#   project: default
-#   source:
-#     repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-#     targetRevision: main
-#     path: apps/frontend/overlays/dev
-#   destination:
-#     server: https://kubernetes.default.svc
-#     namespace: frontend
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-#     syncOptions:
-#       - CreateNamespace=true
+# bootstrap/110_frontend.yaml
+# Wave 910 — frontend application. Depends on the full platform 
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-910-frontend
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "910"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+    targetRevision: main
+    path: apps/frontend/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: frontend
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
