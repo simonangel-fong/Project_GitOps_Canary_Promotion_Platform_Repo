@@ -4,8 +4,6 @@ metadata:
   name: general-node-class
   annotations:
     argocd.argoproj.io/sync-wave: "121"
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   role: {{ .Values.clusterName | quote }}
   amiSelectorTerms:

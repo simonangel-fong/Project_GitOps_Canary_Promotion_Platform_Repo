@@ -4,8 +4,6 @@ metadata:
   name: general-node-pool
   annotations:
     argocd.argoproj.io/sync-wave: "122"
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   template:
     spec:
