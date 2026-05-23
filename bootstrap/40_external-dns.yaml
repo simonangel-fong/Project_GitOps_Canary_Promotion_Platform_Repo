@@ -39,8 +39,8 @@ spec:
           - name: CF_API_TOKEN
             valueFrom:
               secretKeyRef:
-                name: gitops-secret
-                key: e-dns.cloudflare-key
+                name: cloudflare-api-key
+                key: cloudflare_api_key
 
         resources:
           requests:
