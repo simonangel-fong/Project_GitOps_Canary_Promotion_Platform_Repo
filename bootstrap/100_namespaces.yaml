@@ -1,31 +1,31 @@
-# # bootstrap/100_namespaces.yaml
-# # Wave 100 — pre-creates namespaces that later waves need to exist before
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: platform-100-namespaces
-#   namespace: argocd
-#   finalizers:
-#     - resources-finalizer.argocd.argoproj.io
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "100"
-# spec:
-#   project: default
-#   source:
-#     repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-#     targetRevision: main
-#     path: platform/namespaces
-#   destination:
-#     server: https://kubernetes.default.svc
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-#     retry:
-#       limit: 5
-#       backoff:
-#         duration: 10s
-#         maxDuration: 3m
-#         factor: 2
-#     syncOptions:
-#       - ServerSideApply=true
+# bootstrap/100_namespaces.yaml
+# Wave 100 — pre-creates namespaces that later waves need to exist before
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-100-namespaces
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "100"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+    targetRevision: main
+    path: platform/namespaces
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        maxDuration: 3m
+        factor: 2
+    syncOptions:
+      - ServerSideApply=true
