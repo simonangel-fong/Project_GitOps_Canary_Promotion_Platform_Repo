@@ -1,41 +1,41 @@
-# # bootstrap/30_envoy.yaml
-# # Wave 30 — installs the Envoy Gateway controller via Helm (OCI registry).
-# apiVersion: argoproj.io/v1alpha1
-# kind: Application
-# metadata:
-#   name: platform-210-envoy-gateway
-#   namespace: argocd
-#   finalizers:
-#     - resources-finalizer.argocd.argoproj.io
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "210"
-# spec:
-#   project: default
-#   source:
-#     repoURL: docker.io/envoyproxy
-#     chart: gateway-helm
-#     targetRevision: 1.8.0
-#     helm:
-#       releaseName: eg
-#       values: |
-#         config:
-#           envoyGateway:
-#             logging:
-#               level:
-#                 default: info
-#   destination:
-#     server: https://kubernetes.default.svc
-#     namespace: envoy-gateway-system
-#   syncPolicy:
-#     automated:
-#       prune: true
-#       selfHeal: true
-#     retry:
-#       limit: 5
-#       backoff:
-#         duration: 10s
-#         maxDuration: 3m
-#         factor: 2
-#     syncOptions:
-#       - ServerSideApply=true
-#       - CreateNamespace=true
+# bootstrap/30_envoy.yaml
+# Wave 30 — installs the Envoy Gateway controller via Helm (OCI registry).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-210-envoy-gateway
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "210"
+spec:
+  project: default
+  source:
+    repoURL: docker.io/envoyproxy
+    chart: gateway-helm
+    targetRevision: 1.8.0
+    helm:
+      releaseName: eg
+      values: |
+        config:
+          envoyGateway:
+            logging:
+              level:
+                default: info
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: envoy-gateway-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        maxDuration: 3m
+        factor: 2
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true
