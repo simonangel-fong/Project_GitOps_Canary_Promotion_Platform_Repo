@@ -3,18 +3,15 @@ kind: Kustomization
 namespace: backend
 resources:
   - ../../base
-
 images:
   - name: gitops-demo-backend
     newName: docker.io/simonangelfong/gitops-demo-backend
-    newTag: app-v0.2.0
-
+    newTag: v0.2.4
 labels:
   - includeSelectors: false
     pairs:
       app.kubernetes.io/instance: gitops-demo-backend-dev
       env: dev
-
 patches:
   - target:
       kind: HorizontalPodAutoscaler
