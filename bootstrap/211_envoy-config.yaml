@@ -1,50 +1,50 @@
-# bootstrap/211_envoy-config.yaml
-# Wave 211 — applies the GatewayClass, EnvoyProxy, and Gateway, templated
-# per cluster from the Argo CD cluster-secret annotations.
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: envoy-config
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  goTemplate: true
-  # goTemplateOptions: ["missingkey=error"]
-  generators:
-    - clusters: {} # Automatically use all clusters defined within Argo CD
-  template:
-    metadata:
-      name: platform-211-envoy-config
-      namespace: argocd
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "211"
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-        targetRevision: main
-        path: platform/envoy
-        helm:
-          releaseName: envoy-config
-          values: |
-            albName: '{{ index .metadata.annotations "gateway.alb-name" }}'
-            tlsCertArn: '{{ index .metadata.annotations "gateway.tls-cert-arn" }}'
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: envoy-gateway-system
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        retry:
-          limit: 5
-          backoff:
-            duration: 10s
-            maxDuration: 3m
-            factor: 2
-        syncOptions:
-          - ServerSideApply=true
-          - CreateNamespace=false
+# # bootstrap/211_envoy-config.yaml
+# # Wave 211 — applies the GatewayClass, EnvoyProxy, and Gateway, templated
+# # per cluster from the Argo CD cluster-secret annotations.
+# apiVersion: argoproj.io/v1alpha1
+# kind: ApplicationSet
+# metadata:
+#   name: envoy-config
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   goTemplate: true
+#   # goTemplateOptions: ["missingkey=error"]
+#   generators:
+#     - clusters: {} # Automatically use all clusters defined within Argo CD
+#   template:
+#     metadata:
+#       name: platform-211-envoy-config
+#       namespace: argocd
+#       finalizers:
+#         - resources-finalizer.argocd.argoproj.io
+#       annotations:
+#         argocd.argoproj.io/sync-wave: "211"
+#     spec:
+#       project: default
+#       source:
+#         repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+#         targetRevision: main
+#         path: platform/envoy
+#         helm:
+#           releaseName: envoy-config
+#           values: |
+#             albName: '{{ index .metadata.annotations "gateway.alb-name" }}'
+#             tlsCertArn: '{{ index .metadata.annotations "gateway.tls-cert-arn" }}'
+#       destination:
+#         server: https://kubernetes.default.svc
+#         namespace: envoy-gateway-system
+#       syncPolicy:
+#         automated:
+#           prune: true
+#           selfHeal: true
+#         retry:
+#           limit: 5
+#           backoff:
+#             duration: 10s
+#             maxDuration: 3m
+#             factor: 2
+#         syncOptions:
+#           - ServerSideApply=true
+#           - CreateNamespace=false

@@ -1,55 +1,55 @@
-# bootstrap/90_argo-rollouts.yaml
-# Wave 500 — installs Argo Rollouts via Helm (argoproj charts).
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-500-argo-rollouts
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "500"
-spec:
-  project: default
-  source:
-    repoURL: https://argoproj.github.io/argo-helm
-    chart: argo-rollouts
-    targetRevision: 2.40.9
-    helm:
-      releaseName: argo-rollouts
-      values: |
-        controller:
-          replicas: 1
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 200m
-              memory: 256Mi
+# # bootstrap/90_argo-rollouts.yaml
+# # Wave 500 — installs Argo Rollouts via Helm (argoproj charts).
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-500-argo-rollouts
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "500"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://argoproj.github.io/argo-helm
+#     chart: argo-rollouts
+#     targetRevision: 2.40.9
+#     helm:
+#       releaseName: argo-rollouts
+#       values: |
+#         controller:
+#           replicas: 1
+#           resources:
+#             requests:
+#               cpu: 100m
+#               memory: 128Mi
+#             limits:
+#               cpu: 200m
+#               memory: 256Mi
 
-        dashboard:
-          enabled: true
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argo-rollouts
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=true
+#         dashboard:
+#           enabled: true
+#           resources:
+#             requests:
+#               cpu: 50m
+#               memory: 64Mi
+#             limits:
+#               cpu: 100m
+#               memory: 128Mi
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: argo-rollouts
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=true

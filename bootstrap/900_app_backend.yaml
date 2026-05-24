@@ -1,38 +1,38 @@
-# bootstrap/900_app_backend.yaml
-# Wave 900 — backend application, templated per cluster from the
-# Argo CD cluster-secret annotations (env).
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: app-900-backend
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  goTemplate: true
-  # goTemplateOptions: ["missingkey=error"]
-  generators:
-    - clusters: {}
-  template:
-    metadata:
-      name: app-900-backend
-      namespace: argocd
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "900"
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-        targetRevision: main
-        path: apps/backend/overlays/{{ index .metadata.annotations "env" }}
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: backend
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
+# # bootstrap/900_app_backend.yaml
+# # Wave 900 — backend application, templated per cluster from the
+# # Argo CD cluster-secret annotations (env).
+# apiVersion: argoproj.io/v1alpha1
+# kind: ApplicationSet
+# metadata:
+#   name: app-900-backend
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   goTemplate: true
+#   # goTemplateOptions: ["missingkey=error"]
+#   generators:
+#     - clusters: {}
+#   template:
+#     metadata:
+#       name: app-900-backend
+#       namespace: argocd
+#       finalizers:
+#         - resources-finalizer.argocd.argoproj.io
+#       annotations:
+#         argocd.argoproj.io/sync-wave: "900"
+#     spec:
+#       project: default
+#       source:
+#         repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+#         targetRevision: main
+#         path: apps/backend/overlays/{{ index .metadata.annotations "env" }}
+#       destination:
+#         server: https://kubernetes.default.svc
+#         namespace: backend
+#       syncPolicy:
+#         automated:
+#           prune: true
+#           selfHeal: true
+#         syncOptions:
+#           - CreateNamespace=true

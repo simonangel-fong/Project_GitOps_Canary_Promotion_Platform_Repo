@@ -1,47 +1,47 @@
-# bootstrap/910_app_frontend.yaml
-# Wave 910 — frontend application, templated per cluster from the
-# Argo CD cluster-secret annotations (hostname).
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: app-910-frontend
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  goTemplate: true
-  # goTemplateOptions: ["missingkey=error"]
-  generators:
-    - clusters: {}
-  template:
-    metadata:
-      name: app-910-frontend
-      namespace: argocd
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "910"
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-        targetRevision: main
-        path: apps/frontend/overlays/{{ index .metadata.annotations "env" }}
-        kustomize:
-          patches:
-            - target:
-                kind: HTTPRoute
-                name: gitops-demo-frontend
-              patch: |-
-                - op: replace
-                  path: /spec/hostnames/0
-                  value: '{{ index .metadata.annotations "hostname" }}'
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: frontend
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
+# # bootstrap/910_app_frontend.yaml
+# # Wave 910 — frontend application, templated per cluster from the
+# # Argo CD cluster-secret annotations (hostname).
+# apiVersion: argoproj.io/v1alpha1
+# kind: ApplicationSet
+# metadata:
+#   name: app-910-frontend
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   goTemplate: true
+#   # goTemplateOptions: ["missingkey=error"]
+#   generators:
+#     - clusters: {}
+#   template:
+#     metadata:
+#       name: app-910-frontend
+#       namespace: argocd
+#       finalizers:
+#         - resources-finalizer.argocd.argoproj.io
+#       annotations:
+#         argocd.argoproj.io/sync-wave: "910"
+#     spec:
+#       project: default
+#       source:
+#         repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+#         targetRevision: main
+#         path: apps/frontend/overlays/{{ index .metadata.annotations "env" }}
+#         kustomize:
+#           patches:
+#             - target:
+#                 kind: HTTPRoute
+#                 name: gitops-demo-frontend
+#               patch: |-
+#                 - op: replace
+#                   path: /spec/hostnames/0
+#                   value: '{{ index .metadata.annotations "hostname" }}'
+#       destination:
+#         server: https://kubernetes.default.svc
+#         namespace: frontend
+#       syncPolicy:
+#         automated:
+#           prune: true
+#           selfHeal: true
+#         syncOptions:
+#           - CreateNamespace=true

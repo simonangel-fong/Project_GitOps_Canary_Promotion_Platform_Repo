@@ -1,47 +1,47 @@
-# bootstrap/121_karpenter-config.yaml
-# Wave 121 — EC2NodeClass + NodePool CRs, templated per cluster from the
-# Argo CD cluster-secret annotations (same pattern as 120_karpenter.yaml).
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: karpenter-config
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  goTemplate: true
-  # goTemplateOptions: ["missingkey=error"]
-  generators:
-    - clusters: {} # Automatically use all clusters defined within Argo CD
-  template:
-    metadata:
-      name: platform-121-karpenter-config
-      namespace: argocd
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "121"
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-        targetRevision: main
-        path: platform/karpenter
-        helm:
-          releaseName: karpenter-config
-          values: |
-            clusterName: '{{ index .metadata.annotations "eks.cluster-name" }}'
-      destination:
-        server: https://kubernetes.default.svc
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        retry:
-          limit: 5
-          backoff:
-            duration: 10s
-            maxDuration: 3m
-            factor: 2
-        syncOptions:
-          - ServerSideApply=true
+# # bootstrap/121_karpenter-config.yaml
+# # Wave 121 — EC2NodeClass + NodePool CRs, templated per cluster from the
+# # Argo CD cluster-secret annotations (same pattern as 120_karpenter.yaml).
+# apiVersion: argoproj.io/v1alpha1
+# kind: ApplicationSet
+# metadata:
+#   name: karpenter-config
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   goTemplate: true
+#   # goTemplateOptions: ["missingkey=error"]
+#   generators:
+#     - clusters: {} # Automatically use all clusters defined within Argo CD
+#   template:
+#     metadata:
+#       name: platform-121-karpenter-config
+#       namespace: argocd
+#       finalizers:
+#         - resources-finalizer.argocd.argoproj.io
+#       annotations:
+#         argocd.argoproj.io/sync-wave: "121"
+#     spec:
+#       project: default
+#       source:
+#         repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+#         targetRevision: main
+#         path: platform/karpenter
+#         helm:
+#           releaseName: karpenter-config
+#           values: |
+#             clusterName: '{{ index .metadata.annotations "eks.cluster-name" }}'
+#       destination:
+#         server: https://kubernetes.default.svc
+#       syncPolicy:
+#         automated:
+#           prune: true
+#           selfHeal: true
+#         retry:
+#           limit: 5
+#           backoff:
+#             duration: 10s
+#             maxDuration: 3m
+#             factor: 2
+#         syncOptions:
+#           - ServerSideApply=true
