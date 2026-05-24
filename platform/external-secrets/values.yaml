@@ -1,0 +1,12 @@
+aws:
+  region: ca-central-1
+  serviceAccount:
+    name: external-secrets
+    namespace: external-secrets
+
+cloudflare:
+  ssmKey: ""
+  namespace: external-dns
+  refreshInterval: 1h
+  secretName: cloudflare-api-key
+  secretKey: cloudflare_api_key
