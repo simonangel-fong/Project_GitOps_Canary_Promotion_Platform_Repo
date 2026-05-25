@@ -1,0 +1,34 @@
+name: security-scan
+description: Scan Kubernetes, Helm, and Kustomize manifests with Checkov. Skip-list lives in .checkov.yaml.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      with:
+        python-version: "3.12"
+
+    - name: Install Checkov
+      shell: bash
+      env:
+        CHECKOV_VERSION: "3.2.334"
+      run: pip install --no-cache-dir "checkov==${CHECKOV_VERSION}"
+
+    - name: Run Checkov
+      shell: bash
+      run: |
+        set -euo pipefail
+        checkov \
+          --directory . \
+          --config-file .checkov.yaml \
+          --output cli \
+          --output sarif \
+          --output-file-path console,.
+
+    - name: Upload SARIF to GitHub Security
+      if: always()
+      uses: github/codeql-action/upload-sarif@4e828ff8d448a8a6e532957b1811f387a63867e8 # v3.29.4
+      with:
+        sarif_file: results_sarif.sarif
+        category: checkov

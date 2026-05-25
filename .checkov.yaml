@@ -1,0 +1,18 @@
+framework:
+  - kubernetes
+  - helm
+  - kustomize
+
+skip-path:
+  - docs/
+  - .github/
+
+# Per-finding skips. Add the check ID and a one-line reason.
+# Example:
+# skip-check:
+#   - CKV_K8S_43  # image tag pinned via Kustomize images[]; check sees placeholder
+skip-check: []
+
+soft-fail: false
+quiet: true
+compact: true

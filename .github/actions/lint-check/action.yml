@@ -1,0 +1,73 @@
+name: lint-check
+description: Render and validate Kustomize overlays, Helm charts, and raw bootstrap YAML with kubeconform.
+
+runs:
+  using: composite
+  steps:
+    - name: Install kubeconform
+      shell: bash
+      env:
+        KUBECONFORM_VERSION: v0.6.7
+      run: |
+        set -euo pipefail
+        curl -fsSL -o /tmp/kubeconform.tar.gz \
+          "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+        tar -xzf /tmp/kubeconform.tar.gz -C /tmp kubeconform
+        sudo install -m 0755 /tmp/kubeconform /usr/local/bin/kubeconform
+        kubeconform -v
+
+    - name: Setup Kustomize
+      uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2.1.0
+      with:
+        kustomize-version: "5.4.3"
+
+    - name: Setup Helm
+      uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+      with:
+        version: v3.15.3
+
+    - name: Lint apps/ (kustomize build → kubeconform)
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        failed=0
+        for overlay in apps/*/overlays/*/; do
+          echo "::group::kustomize build $overlay"
+          if ! kustomize build "$overlay" \
+            | kubeconform -strict -ignore-missing-schemas -summary -output text -; then
+            failed=1
+          fi
+          echo "::endgroup::"
+        done
+        exit "$failed"
+
+    - name: Lint platform/ (helm lint + helm template → kubeconform)
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        failed=0
+        for chart in platform/*/; do
+          [ -f "${chart}Chart.yaml" ] || continue
+          echo "::group::helm lint $chart"
+          helm lint "$chart" || failed=1
+          echo "::endgroup::"
+
+          echo "::group::helm template $chart | kubeconform"
+          if ! helm template "$chart" \
+            | kubeconform -strict -ignore-missing-schemas -summary -output text -; then
+            failed=1
+          fi
+          echo "::endgroup::"
+        done
+        exit "$failed"
+
+    - name: Lint bootstrap/ (raw YAML → kubeconform)
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        files=(bootstrap/*.yaml bootstrap/*.yml)
+        [ ${#files[@]} -gt 0 ] || { echo "no bootstrap manifests"; exit 0; }
+        kubeconform -strict -ignore-missing-schemas -summary -output text "${files[@]}"
