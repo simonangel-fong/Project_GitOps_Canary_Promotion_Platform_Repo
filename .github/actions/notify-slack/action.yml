@@ -1,0 +1,40 @@
+name: notify-slack
+description: Post a workflow status message to Slack via bot token (chat.postMessage).
+
+inputs:
+  slack-bot-token:
+    description: Slack bot token (xoxb-...).
+    required: true
+  slack-channel:
+    description: Slack channel ID (e.g. C0123456789).
+    required: true
+  status:
+    description: One of success, failure, cancelled.
+    required: true
+  workflow:
+    description: Workflow name.
+    required: true
+  run-url:
+    description: URL to the workflow run.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Post to Slack
+      uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
+      with:
+        method: chat.postMessage
+        token: ${{ inputs.slack-bot-token }}
+        payload: |
+          channel: "${{ inputs.slack-channel }}"
+          text: "${{ inputs.workflow }} on ${{ github.repository }}@${{ github.ref_name }}: ${{ inputs.status }}"
+          blocks:
+            - type: section
+              text:
+                type: mrkdwn
+                text: "*${{ inputs.workflow }}* on `${{ github.repository }}@${{ github.ref_name }}`: *${{ inputs.status }}*"
+            - type: context
+              elements:
+                - type: mrkdwn
+                  text: "<${{ inputs.run-url }}|View run> · actor: `${{ github.actor }}` · sha: `${{ github.sha }}`"
