@@ -6,7 +6,7 @@ resources:
 images:
   - name: gitops-demo-frontend
     newName: docker.io/simonangelfong/gitops-demo-frontend
-    newTag: v0.2.3
+    newTag: v0.3.0
 labels:
   - includeSelectors: false
     pairs:
