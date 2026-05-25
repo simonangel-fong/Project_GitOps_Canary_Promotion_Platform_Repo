@@ -39,7 +39,7 @@ spec:
             - name: PGDB_URL
               value: "jdbc:postgresql://postgres:5432/demo_db"
             - name: OOM_ENABLE
-              value: "true"
+              value: "false"
             - name: OOM_TIME
               value: "1"
           livenessProbe:
