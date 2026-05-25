@@ -84,14 +84,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p .checkov-rendered
           checkov \
             --directory .rendered \
             --config-file .checkov.yaml \
             --framework kubernetes \
             --output cli \
             --output sarif \
-            --output-file-path console,.checkov-rendered
+            --output-file-path console,results_sarif_rendered.sarif
 
       - name: Run Checkov (non-kustomize paths)
         shell: bash
@@ -106,20 +105,20 @@ jobs:
             --skip-path .rendered/ \
             --output cli \
             --output sarif \
-            --output-file-path console,.
+            --output-file-path console,results_sarif_raw.sarif
 
       - name: Upload SARIF (rendered overlays) to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@4e828ff8d448a8a6e532957b1811f387a63867e8 # v3.29.4
         with:
-          sarif_file: .rendered/results_sarif.sarif
+          sarif_file: results_sarif_rendered.sarif
           category: checkov-rendered
 
       - name: Upload SARIF (non-kustomize) to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@4e828ff8d448a8a6e532957b1811f387a63867e8 # v3.29.4
         with:
-          sarif_file: results_sarif.sarif
+          sarif_file: results_sarif_raw.sarif
           category: checkov-raw
 
   notify-slack:
