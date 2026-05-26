@@ -1,0 +1,57 @@
+# bootstrap/112_argocd-notifications.yaml
+# Wave 112 — applies the argocd-notifications-cm ConfigMap consumed by the
+# Argo CD notifications controller. Depends on wave 111 (ExternalSecret that
+# creates argocd-notifications-secret holding the Slack bot token).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argocd-notifications
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  goTemplate: true
+  # goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: platform-112-argocd-notifications
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      labels:
+        type: platform
+      annotations:
+        argocd.argoproj.io/sync-wave: "112"
+    spec:
+      project: gitops
+      source:
+        repoURL: https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+        targetRevision: '{{ index .metadata.annotations "env" }}'
+        path: platform/argocd-notifications
+        helm:
+          releaseName: argocd-notifications
+          values: |
+            slack:
+              secretName: argocd-notifications-secret
+              secretKey: slack-token
+            channels:
+              alerts: platform-alerts
+              deployments: platform-deployments
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          # selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            maxDuration: 3m
+            factor: 2
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=false

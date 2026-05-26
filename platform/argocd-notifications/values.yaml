@@ -1,0 +1,7 @@
+slack:
+  secretName: argocd-notifications-secret
+  secretKey: slack-token
+
+channels:
+  alerts: platform-alerts
+  deployments: platform-deployments
