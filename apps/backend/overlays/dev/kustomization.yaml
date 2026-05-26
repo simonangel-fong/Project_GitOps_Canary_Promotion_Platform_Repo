@@ -4,13 +4,13 @@ namespace: backend
 resources:
   - ../../base
 images:
-  - name: gitops-backend
+  - name: gitops-demo-backend
     newName: docker.io/simonangelfong/gitops-demo-backend
     newTag: v0.3.0
 labels:
   - includeSelectors: false
     pairs:
-      app.kubernetes.io/instance: gitops-backend-dev
+      app.kubernetes.io/instance: gitops-backend
       env: dev
 patches:
   - target:
