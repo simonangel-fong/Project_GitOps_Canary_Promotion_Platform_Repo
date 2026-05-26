@@ -22,12 +22,12 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
-            # Same value across envs — each cluster runs its own backend
-            # in the "backend" namespace.
-            - name: BACKEND_URL
-              value: "http://gitops-backend.backend.svc.cluster.local:8080"
-            - name: NGINX_ENVSUBST_FILTER
-              value: "BACKEND_URL"
+          - name: BACKEND_URL
+            value: "http://gitops-backend.backend.svc.cluster.local:8080"
+          - name: DNS_RESOLVER
+            value: "kube-dns.kube-system.svc.cluster.local"
+          - name: NGINX_ENVSUBST_FILTER
+            value: "BACKEND_URL|DNS_RESOLVER"
           livenessProbe:
             httpGet:
               path: /healthz
