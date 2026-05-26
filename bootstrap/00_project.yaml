@@ -1,33 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: AppProject
 metadata:
-  name: argocd-project
+  name: gitops1
   namespace: argocd
-  annotations: {}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  goTemplate: true
-  # goTemplateOptions: ["missingkey=error"]
-  generators:
-  - clusters: {} # Automatically use all clusters defined within Argo CD
-  template:
-    metadata:
-      name: '{{ index .metadata.annotations "env" }}'
-      namespace: argocd
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-    spec:
-      description: "Argo CD Project"
-      sourceRepos:
-        - https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-        - https://charts.external-secrets.io
-      destinations:
-        - server: https://kubernetes.default.svc
-          namespace: "*"
-      clusterResourceWhitelist:
-        - group: "*"
-          kind: "*"
-      namespaceResourceWhitelist:
-        - group: "*"
-          kind: "*"
+  description: "Project GitOps"
+  sourceRepos:
+    - https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
