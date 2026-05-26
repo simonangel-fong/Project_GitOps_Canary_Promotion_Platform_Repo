@@ -13,6 +13,7 @@ spec:
     - public.ecr.aws/karpenter
     - https://aws.github.io/eks-charts
     - docker.io/envoyproxy
+    - https://kubernetes-sigs.github.io/external-dns
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"
