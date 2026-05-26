@@ -25,18 +25,18 @@ Canary is a filter, not a guarantee. Whether a bug is caught depends on whether 
 
 ### Bug 1 — RDS connection failure
 
-- Trigger: env var `DB_HOST` pointed at an unreachable host (or `DB_PASSWORD` wrong).
-- Symptom: Spring Boot fails to start the connection pool, `/api/health` returns 500 or pod fails to bind port.
+- Trigger: env vars `PGDB_ENABLE=true` and `PGDB_URL` pointed at an unreachable host (e.g. `jdbc:postgresql://broken-host:5432/demo_db`).
+- Symptom: Spring Boot attempts to connect on startup / health-check time, `/api/healthz` returns non-200 (the endpoint includes a DB check).
 - Manifests as: readinessProbe fails on every new pod.
 - Catching layer: Kubernetes readiness + Argo Rollouts `progressDeadlineSeconds`. AnalysisTemplate is _not needed_ — canary pods never become Ready, so the rollout cannot progress.
 
 ### Bug 2 — Subtle OOM
 
-- Trigger: env vars `IS_OOM=true` and `OOM_AFTER_MINUTE=N` on the Spring Boot app.
+- Trigger: env vars `OOM_ENABLE=true` and `OOM_TIME=N` on the Spring Boot app.
 - Behavior: app starts and serves traffic normally. After N minutes, allocates past the 256Mi container limit → OOMKilled → restarts → OOMs again → CrashLoopBackOff.
 - Catching layer depends on canary window length:
-  - **Window < OOM_AFTER_MINUTE** (dev, 60s pauses) → rollout completes before OOM fires. Bug escapes.
-  - **Window > OOM_AFTER_MINUTE** (stage, 10min pauses) → OOM fires while canary pod is serving 25% of traffic. AnalysisTemplate sees memory spike or pod restart and aborts.
+  - **Window < OOM_TIME** (dev, 60s pauses) → rollout completes before OOM fires. Bug escapes.
+  - **Window > OOM_TIME** (stage, 10min pauses) → OOM fires while canary pod is serving 25% of traffic. AnalysisTemplate sees memory spike or pod restart and aborts.
 
 ## Argo Rollouts configuration
 
@@ -121,12 +121,14 @@ All bug-control env vars live in [apps/backend/base/20_rollout.yaml](apps/backen
 
 ```yaml
 env:
-  - name: IS_OOM
+  - name: PGDB_ENABLE
+    value: "false" # DB disabled by default; bug 1 demo flips to "true"
+  - name: PGDB_URL
+    value: "jdbc:postgresql://postgres:5432/demo_db" # valid by default
+  - name: OOM_ENABLE
     value: "false"
-  - name: OOM_AFTER_MINUTE
-    value: "0"
-  - name: DB_HOST
-    value: "rds.internal" # valid by default
+  - name: OOM_TIME
+    value: "1"
 ```
 
 Demo overlays patch these on via Kustomize JSON patches, matching the existing HPA patch pattern in [apps/backend/overlays/dev/kustomization.yaml](apps/backend/overlays/dev/kustomization.yaml). Prod overlay (when added) inherits the safe defaults — no risk of demo-mode leaking.
@@ -153,8 +155,8 @@ Scenario 3a's recovery uses path 3 (git revert). Path 2 is shown as the imperati
 
 | Day | Task                                                                                                                                                                                                                                                                                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Confirm preconditions: stage cluster registered with ArgoCD; Prometheus reachable from stage; Spring Boot OOM reproduces reliably with `IS_OOM=true OOM_AFTER_MINUTE=3` at 256Mi limit; stage overlay syncs today.                                                                   |
-| 2   | Add `IS_OOM`, `OOM_AFTER_MINUTE`, `DB_HOST` env vars with safe defaults to [apps/backend/base/20_rollout.yaml](apps/backend/base/20_rollout.yaml). Patch dev and stage overlays to enable bug modes for the demo. Add `progressDeadlineSeconds` and `progressDeadlineAbort` per env. |
+| 1   | Confirm preconditions: stage cluster registered with ArgoCD; Prometheus reachable from stage; Spring Boot OOM reproduces reliably with `OOM_ENABLE=true OOM_TIME=3` at 256Mi limit; stage overlay syncs today.                                                                   |
+| 2   | Confirm `PGDB_ENABLE`, `PGDB_URL`, `OOM_ENABLE`, `OOM_TIME` env vars exist in [apps/backend/base/20_rollout.yaml](apps/backend/base/20_rollout.yaml) with safe defaults. Patch dev and stage overlays to enable bug modes for the demo. Add `progressDeadlineSeconds` and `progressDeadlineAbort` per env. |
 | 3   | Write AnalysisTemplate. Wire into stage rollout steps. Verify Prometheus service DNS from inside the stage cluster.                                                                                                                                                                  |
 | 4   | Dry-run all three scenarios end-to-end on the live clusters. Tune timings if OOM doesn't land inside the canary window. Capture asciinema/screenshots of `kubectl argo rollouts get rollout -w` for each run.                                                                        |
 | 5   | Draft README. Build the architecture diagram (built vs designed, solid vs dashed).                                                                                                                                                                                                   |
@@ -169,12 +171,12 @@ Day 1 is non-negotiable. If OOM doesn't reproduce reliably or Prometheus isn't r
 - [ ] Backend ApplicationSet ([bootstrap/900_app_backend.yaml](bootstrap/900_app_backend.yaml)) generates a stage Application — `kubectl get applications -n argocd` shows `app-900-backend` for stage.
 - [ ] Prometheus reachable from inside the stage cluster — `kubectl run -n backend --rm -it --image=curlimages/curl curl-test -- curl http://prometheus-server.monitoring.svc.cluster.local:9090/-/ready` returns 200.
 - [ ] `kube_pod_container_status_restarts_total` metric exists — query it in the Prometheus UI before relying on it in the AnalysisTemplate.
-- [ ] Spring Boot OOM fires within window — local docker run with `IS_OOM=true OOM_AFTER_MINUTE=3 -m 256m`, confirm OOMKill within 4-5 min.
+- [ ] Spring Boot OOM fires within window — local docker run with `OOM_ENABLE=true OOM_TIME=3 -m 256m`, confirm OOMKill within 4-5 min.
 - [ ] HPA on dev allows enough replicas — `maxReplicas: 2` may round 25% canary weight down to 0 pods. Bump to 4 for the demo if needed.
 
 ## Open design questions to resolve during build
 
-1. **Bug 1 trigger mechanism.** Wrong `DB_HOST` is simplest. Alternative: a `BUG_RDS=true` flag in the app that throws on startup. Pick whichever requires the smallest app-side change.
+1. ~~**Bug 1 trigger mechanism.**~~ Resolved: use `PGDB_ENABLE=true` + unreachable `PGDB_URL`. `/api/healthz` includes a DB check, so the readiness probe fails when the DB is unreachable.
 2. **Should scenario 3a end with `git revert` on camera, or just describe it?** Recording the revert adds 30s to the video but completes the story. Decide during day-6 edit.
 3. **AnalysisTemplate placement.** Currently in [apps/backend/base/](apps/backend/base/) and applied to all overlays via a stage-only patch, or in [apps/backend/overlays/stage/](apps/backend/overlays/stage/) directly. The latter is simpler; the former is more "production" (template lives with the app, environments toggle it on). Resolve on day 3.
 

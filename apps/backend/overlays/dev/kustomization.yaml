@@ -36,12 +36,14 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/1/value
         value: "green"
+      # Scenario 2 (RDS connection failure): PGDB_ENABLE=true + unreachable PGDB_URL.
+      # /api/healthz checks DB, so readiness fails → progressDeadlineSeconds (180s) trips → rollout aborts at 25% step.
       - op: replace
         path: /spec/template/spec/containers/0/env/2/value
-        value: "false"
+        value: "true"
       - op: replace
         path: /spec/template/spec/containers/0/env/3/value
-        value: "jdbc:postgresql://postgres:5432/demo_db"
+        value: "jdbc:postgresql://broken-host.invalid:5432/demo_db"
       - op: replace
         path: /spec/template/spec/containers/0/env/4/value
         value: "false"
