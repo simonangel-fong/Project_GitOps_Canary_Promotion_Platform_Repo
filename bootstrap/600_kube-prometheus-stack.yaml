@@ -1,114 +1,114 @@
-# bootstrap/600_kube-prometheus-stack.yaml
-# Wave 600 — installs kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
-# via the prometheus-community Helm chart.
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform-600-kube-prometheus-stack
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "600"
-spec:
-  project: default
-  source:
-    repoURL: https://prometheus-community.github.io/helm-charts
-    chart: kube-prometheus-stack
-    targetRevision: 75.6.1
-    helm:
-      releaseName: kube-prometheus-stack
-      values: |
-        fullnameOverride: kps
+# # bootstrap/600_kube-prometheus-stack.yaml
+# # Wave 600 — installs kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
+# # via the prometheus-community Helm chart.
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: platform-600-kube-prometheus-stack
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "600"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://prometheus-community.github.io/helm-charts
+#     chart: kube-prometheus-stack
+#     targetRevision: 75.6.1
+#     helm:
+#       releaseName: kube-prometheus-stack
+#       values: |
+#         fullnameOverride: kps
 
-        crds:
-          enabled: true
+#         crds:
+#           enabled: true
 
-        prometheus:
-          prometheusSpec:
-            replicas: 1
-            retention: 15d
-            resources:
-              requests:
-                cpu: 200m
-                memory: 512Mi
-              limits:
-                cpu: 500m
-                memory: 1Gi
-            serviceMonitorSelectorNilUsesHelmValues: false
-            podMonitorSelectorNilUsesHelmValues: false
-            ruleSelectorNilUsesHelmValues: false
-            # storageSpec:
-            #   volumeClaimTemplate:
-            #     spec:
-            #       accessModes: ["ReadWriteOnce"]
-            #       resources:
-            #         requests:
-            #           storage: 20Gi
+#         prometheus:
+#           prometheusSpec:
+#             replicas: 1
+#             retention: 15d
+#             resources:
+#               requests:
+#                 cpu: 200m
+#                 memory: 512Mi
+#               limits:
+#                 cpu: 500m
+#                 memory: 1Gi
+#             serviceMonitorSelectorNilUsesHelmValues: false
+#             podMonitorSelectorNilUsesHelmValues: false
+#             ruleSelectorNilUsesHelmValues: false
+#             # storageSpec:
+#             #   volumeClaimTemplate:
+#             #     spec:
+#             #       accessModes: ["ReadWriteOnce"]
+#             #       resources:
+#             #         requests:
+#             #           storage: 20Gi
 
-        alertmanager:
-          alertmanagerSpec:
-            replicas: 1
-            resources:
-              requests:
-                cpu: 50m
-                memory: 64Mi
-              limits:
-                cpu: 100m
-                memory: 128Mi
+#         alertmanager:
+#           alertmanagerSpec:
+#             replicas: 1
+#             resources:
+#               requests:
+#                 cpu: 50m
+#                 memory: 64Mi
+#               limits:
+#                 cpu: 100m
+#                 memory: 128Mi
 
-        grafana:
-          enabled: true
-          replicas: 1
-          adminPassword: prom-operator
-          defaultDashboardsEnabled: true
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 200m
-              memory: 256Mi
-          service:
-            type: ClusterIP
-          persistence:
-            enabled: false
+#         grafana:
+#           enabled: true
+#           replicas: 1
+#           adminPassword: prom-operator
+#           defaultDashboardsEnabled: true
+#           resources:
+#             requests:
+#               cpu: 100m
+#               memory: 128Mi
+#             limits:
+#               cpu: 200m
+#               memory: 256Mi
+#           service:
+#             type: ClusterIP
+#           persistence:
+#             enabled: false
 
-        kube-state-metrics:
-          resources:
-            requests:
-              cpu: 25m
-              memory: 64Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
+#         kube-state-metrics:
+#           resources:
+#             requests:
+#               cpu: 25m
+#               memory: 64Mi
+#             limits:
+#               cpu: 100m
+#               memory: 128Mi
 
-        nodeExporter:
-          enabled: false
-        prometheus-node-exporter:
-          enabled: false
+#         nodeExporter:
+#           enabled: false
+#         prometheus-node-exporter:
+#           enabled: false
 
-        prometheusOperator:
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 200m
-              memory: 256Mi
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      # selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 10s
-        maxDuration: 3m
-        factor: 2
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=true
+#         prometheusOperator:
+#           resources:
+#             requests:
+#               cpu: 50m
+#               memory: 64Mi
+#             limits:
+#               cpu: 200m
+#               memory: 256Mi
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: monitoring
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       # selfHeal: true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 10s
+#         maxDuration: 3m
+#         factor: 2
+#     syncOptions:
+#       - ServerSideApply=true
+#       - CreateNamespace=true
