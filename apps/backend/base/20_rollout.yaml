@@ -23,7 +23,7 @@ spec:
       serviceAccountName: gitops-backend
       containers:
         - name: gitops-backend
-          image: gitops-demo-backend
+          image: gitops-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
