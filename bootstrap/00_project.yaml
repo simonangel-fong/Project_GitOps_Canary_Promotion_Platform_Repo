@@ -1,20 +1,20 @@
-# apiVersion: argoproj.io/v1alpha1
-# kind: AppProject
-# metadata:
-#   name: gitops
-#   namespace: argocd
-#   finalizers:
-#     - resources-finalizer.argocd.argoproj.io
-# spec:
-#   description: "Project GitOps"
-#   sourceRepos:
-#     - https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
-#   destinations:
-#     - server: https://kubernetes.default.svc
-#       namespace: "*"
-#   clusterResourceWhitelist:
-#     - group: "*"
-#       kind: "*"
-#   namespaceResourceWhitelist:
-#     - group: "*"
-#       kind: "*"
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gitops
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Project GitOps"
+  sourceRepos:
+    - https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

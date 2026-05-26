@@ -60,11 +60,12 @@ ESO (-6)
 ```sh
 kubectl patch EnvoyProxy eg-nlb -p '{"metadata":{"finalizers":[]}}' --type=merge -n envoy-gateway-system
 kubectl patch GatewayClass eg -p '{"metadata":{"finalizers":[]}}' --type=merge -n envoy-gateway-system
-kubectl patch EC2NodeClass general-node-class -p '{"metadata":{"finalizers":[]}}' --type=merge -n envoy-gateway-system
+kubectl patch EC2NodeClass general-node-class -p '{"metadata":{"finalizers":[]}}' --type=merge
 kubectl patch namespace external-dns -p '{"metadata":{"finalizers":[]}}' --type=merge
 
 kubectl patch app platform-600-kube-prometheus-stack -p '{"metadata":{"finalizers":[]}}' --type=merge -n argocd
 ```
+
 
 - prometheus confirm
 
