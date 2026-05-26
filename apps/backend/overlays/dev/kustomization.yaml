@@ -19,10 +19,10 @@ patches:
     patch: |-
       - op: replace
         path: /spec/minReplicas
-        value: 50
+        value: 4
       - op: replace
         path: /spec/maxReplicas
-        value: 80
+        value: 8
       - op: replace
         path: /spec/metrics/0/resource/target/averageUtilization
         value: 60
