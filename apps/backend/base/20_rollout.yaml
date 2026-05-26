@@ -33,7 +33,7 @@ spec:
             - name: BACKEND_VERSION
               value: "0.1.0"
             - name: FRONTEND_BG_COLOR
-              value: "red"
+              value: "blue"
             - name: PGDB_ENABLE
               value: "false"
             - name: PGDB_URL
