@@ -1,13 +1,13 @@
-name: 20-cd-dev(untest)
+name: 21-cd-stage(untest)
 
 on:
-  # Fired by Argo Notifications when apps-dev (app-of-apps) reaches Healthy + Synced.
+  # Fired by Argo Notifications when apps-stage (app-of-apps) reaches Healthy + Synced.
   repository_dispatch:
-    types: [argocd-deployed-dev]
+    types: [argocd-deployed-stage]
   workflow_dispatch:
     inputs:
       revision:
-        description: "dev SHA that was deployed (informational)"
+        description: "stage SHA that was deployed (informational)"
         required: false
         type: string
 
@@ -20,13 +20,13 @@ permissions:
 
 jobs:
   open-promotion-pr:
-    name: open-promotion-pr (dev → stage)
+    name: open-promotion-pr (stage → prod)
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
-      BASE_BRANCH: stage
-      HEAD_BRANCH: dev
+      BASE_BRANCH: prod
+      HEAD_BRANCH: stage
       REVISION: ${{ github.event.client_payload.revision || inputs.revision || github.sha }}
       ARGOCD_APP_URL: ${{ github.event.client_payload.argocd_app_url || '' }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Idempotency: if an open PR already exists for dev → stage, skip.
+          # Idempotency: if an open PR already exists for stage → prod, skip.
           existing="$(gh pr list \
             --repo "$REPO" \
             --base "$BASE_BRANCH" \
@@ -91,7 +91,7 @@ jobs:
           - Argo CD: ${ARGOCD_APP_URL:-_n/a_}
           - Triggered run: ${RUN_URL}
 
-          Auto-merge enabled. Will merge once required status checks pass.
+          **Human review required.** CODEOWNERS + branch protection on \`${BASE_BRANCH}\` gate this merge.
           EOF
           )
 
@@ -106,9 +106,7 @@ jobs:
           echo "pr-url=$url" >> "$GITHUB_OUTPUT"
           echo "result=created" >> "$GITHUB_OUTPUT"
 
-          # Enable auto-merge (squash). Requires "Allow auto-merge" in repo settings
-          # and required status checks on the base branch.
-          gh pr merge "$url" --auto --squash
+          # No auto-merge: prod requires human reviewer approval per branch protection.
 
   notify-slack:
     name: notify-slack
