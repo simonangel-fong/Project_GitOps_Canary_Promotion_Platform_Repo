@@ -190,59 +190,56 @@ Place this manifest in your platform GitOps repo alongside other ArgoCD configur
 
 ---
 
-### Step 5 — Deploy Argo Rollouts with Notifications Enabled (ArgoCD GitOps)
+### Step 5 — Deploy Argo Rollouts with Notification Config (ArgoCD GitOps)
 
-Argo Rollouts is deployed as an ArgoCD Application via Helm. Ensure the Helm values include:
+Argo Rollouts is deployed as an ArgoCD Application via the upstream `argo-rollouts` Helm chart. The chart **unconditionally renders** `argo-rollouts-notification-configmap` (there is no flag to disable it). Therefore notification content (notifiers, templates, triggers) MUST be supplied as Helm values to that same Application — splitting it into a separate ConfigMap manifest creates two competing owners of the same resource.
+
+Set the following in the Argo Rollouts Application's Helm values:
 
 ```yaml
-# In your Argo Rollouts Helm values
 notifications:
-  enabled: true
+  configmap:
+    create: true
+  secret:
+    create: false   # ESO owns argo-rollouts-notification-secret
+
+  notifiers:
+    service.slack: |
+      token: $slack-token
+
+  templates:
+    template.rollout-completed: |
+      message: |
+        :rocket: Rollout *{{.rollout.metadata.name}}* in `{{.rollout.metadata.namespace}}` fully promoted.
+      slack:
+        attachments: |
+          [{ "title": "{{ .rollout.metadata.name }}", "color": "#18be52", "fields": [ ... ] }]
+    template.rollout-degraded: |
+      ...
+    template.rollout-paused: |
+      ...
+    template.analysis-run-failed: |
+      ...
+    template.analysis-run-error: |
+      ...
+
+  triggers:
+    trigger.on-rollout-completed: |
+      - when: rollout.status.phase == 'Healthy'
+        send: [rollout-completed]
+    trigger.on-rollout-degraded: |
+      - when: rollout.status.phase == 'Degraded'
+        send: [rollout-degraded]
+    # ... other triggers
 ```
 
-The `argo-rollouts-notification-configmap` and secret are separate ConfigMap manifests in the same ArgoCD Application or a companion Application, **not** Helm values — this avoids Helm managing the configmap content and causing drift.
+> Argo Rollouts' notifications engine is built into the controller — there is **no `notifications.enabled` flag**. It reads `argo-rollouts-notification-configmap` and `argo-rollouts-notification-secret` from its own namespace at runtime.
 
 ---
 
-### Step 6 — Configure Argo Rollouts Notifications ConfigMap (ArgoCD GitOps)
+### Step 6 — (merged into Step 5)
 
-Create `argo-rollouts-notification-configmap` in the `argo-rollouts` namespace.
-
-Key structure:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argo-rollouts-notification-configmap
-  namespace: argo-rollouts
-data:
-  service.slack: |
-    token: $slack-token
-
-  template.rollout-completed:
-    | # include rollout name, namespace, image, strategy
-    ...
-
-  template.rollout-degraded: | # include rollout name, message, action hint
-    ...
-
-  template.analysis-run-failed:
-    | # include analysis run name, metric that failed
-    ...
-
-  template.rollout-paused: | # include step progress, promote command
-    ...
-
-  trigger.on-rollout-completed: |
-    - when: rollout.status.phase == 'Healthy'
-      send: [rollout-completed]
-
-  trigger.on-rollout-degraded: |
-    - when: rollout.status.phase == 'Degraded'
-      send: [rollout-degraded]
-  # ... other triggers
-```
+In the original plan this was a separate ConfigMap Application. That approach causes a "resource is part of two applications" conflict because the chart already renders the ConfigMap. Keep this step as a placeholder for the templates/triggers content — but author it inside the Helm values block of Step 5, not as a standalone manifest.
 
 ---
 
@@ -290,20 +287,25 @@ kubectl get externalsecret -n argo-rollouts
 
 ```
 platform-gitops-repo/
-├── argocd/
-│   ├── argocd-notifications-cm.yaml          # Step 4
-│   └── argocd-notifications-externalsecret.yaml  # Step 3
-└── argo-rollouts/
-    ├── argo-rollouts-app.yaml                # ArgoCD Application for Rollouts (Step 5)
-    ├── argo-rollouts-notification-cm.yaml    # Step 6
-    └── argo-rollouts-notification-externalsecret.yaml  # Step 3
+├── bootstrap/
+│   ├── 111_external-secrets-config.yaml       # Step 3: ESO Slack ExternalSecrets (both namespaces)
+│   ├── 112_argocd-notifications.yaml          # Step 4: ApplicationSet for argocd notif CM
+│   └── 500_argo-rollouts.yaml                 # Step 5+6: Rollouts chart with inline notification values
+└── platform/
+    ├── argocd-notifications/                  # Step 4: Helm chart for argocd-notifications-cm
+    │   ├── Chart.yaml
+    │   ├── values.yaml
+    │   └── templates/notifications-cm.yaml
+    └── external-secrets/                      # Step 3: ESO chart (renders Slack ExternalSecrets)
 
 infra-terraform/
-└── argocd.tf                                 # Helm release with notifications.enabled (Step 2)
+└── argocd.tf                                  # Helm release with notifications controller enabled (Step 2)
 
 aws-ssm/
-└── /platform/notifications/slack-token      # Step 1 (managed outside Git)
+└── /platform/notifications/slack-token        # Step 1 (managed outside Git)
 ```
+
+> The Argo Rollouts notification ConfigMap is **not** a separate chart — it is rendered by the upstream `argo-rollouts` Helm chart, driven by values in `bootstrap/500_argo-rollouts.yaml`.
 
 ---
 
@@ -314,10 +316,20 @@ Step 1  AWS SSM          Store Slack token securely
 Step 2  Terraform        Enable notifications controller in ArgoCD Helm release only
 Step 3  GitOps (ESO)     ExternalSecrets pull SSM token into argocd + argo-rollouts namespaces
 Step 4  GitOps           argocd-notifications-cm — global triggers for all Applications
-Step 5  GitOps           Argo Rollouts Helm Application with notifications.enabled
-Step 6  GitOps           argo-rollouts-notification-configmap — rollout/analysis triggers
+Step 5+6 GitOps          Argo Rollouts Helm Application with notifiers/templates/triggers inlined as Helm values
+                          (the chart owns the ConfigMap; no separate Application)
 Step 7  App manifests    Annotate Rollout CRDs to subscribe to specific channels
 Step 8  Ops              Validate controllers, secrets, and test a notification
 ```
 
 Terraform touches only Step 2. Everything else is GitOps or AWS console/CLI.
+
+---
+
+## Implementation pitfalls (lessons learned)
+
+- **`argo-rollouts-notification-configmap` has exactly one owner.** The upstream chart renders it unconditionally — keep notification content inline in the chart's Helm values, never in a sibling Application. A second Application targeting the same ConfigMap triggers "resource is part of two applications" warnings and an overwrite race on every sync.
+- **Argo notifications secret syntax is `$secretKey`, not `${secretKey}`.** Curly braces are not recognized by either notifications engine; the literal string `${slack-token}` will be POSTed to Slack and rejected as `invalid_auth`.
+- **There is no `notifications.enabled` flag for Argo Rollouts.** The notifications engine is built into the controller and always active. Argo CD does have a separate notifications controller toggled in the Helm chart (`notifications.enabled: true`) — don't conflate the two.
+- **The ESO ExternalSecret must exist in the target namespace before the controller starts**, otherwise the controller fails to resolve `$slack-token` on first reconciliation. Pre-create namespaces at an early wave and let ESO sync ahead of the Helm install.
+- **Never paste a real Slack token into README / docs.** GitHub Push Protection will block the push and the token must be rotated even if the push was rejected (it has already left your machine in the pack file).

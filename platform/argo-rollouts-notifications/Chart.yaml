@@ -1,6 +1,0 @@
-apiVersion: v2
-name: argo-rollouts-notifications
-description: Argo Rollouts notification ConfigMap — Slack templates and triggers for Rollout and AnalysisRun events
-type: application
-version: 0.1.0
-appVersion: "1.0"
