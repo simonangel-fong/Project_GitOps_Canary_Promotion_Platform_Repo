@@ -9,6 +9,7 @@ spec:
   description: "Project GitOps"
   sourceRepos:
     - https://github.com/simonangel-fong/Project_GitOps_Platform_Repo.git
+    - https://charts.external-secrets.io
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"
