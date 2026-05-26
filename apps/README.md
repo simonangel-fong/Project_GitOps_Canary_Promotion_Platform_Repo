@@ -101,3 +101,11 @@ kubectl get events -n backend --sort-by='.lastTimestamp'
 # 3m27s       Warning   Unhealthy              pod/gitops-backend-6bb69bd6bb-bqrl6      Readiness probe failed: Get "http://10.0.12.218:8080/api/healthz": dial tcp 10.0.12.218:8080: connect: connection refused
 
 ```
+
+case 3a
+
+```sh
+# revert
+git revert 43d66eb --no-edit
+git push
+```
