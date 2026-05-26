@@ -19,7 +19,7 @@ patches:
     patch: |-
       - op: replace
         path: /spec/minReplicas
-        value: 4
+        value: 50
       - op: replace
         path: /spec/maxReplicas
         value: 8
