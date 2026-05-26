@@ -9,6 +9,7 @@ resources:
   - 60_netpol_default_deny.yaml
   - 61_netpol_allow_dns.yaml
   - 62_netpol_allow_ingress_from_frontend.yaml
+  - 70_analysis_template.yaml
 
 labels:
   - includeSelectors: false

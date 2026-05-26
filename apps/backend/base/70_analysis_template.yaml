@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: backend-memory-health
+spec:
+  metrics:
+    - name: pod-restart-count
+      interval: 60s
+      count: 3
+      successCondition: result[0] == 0
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://kps-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(increase(
+              kube_pod_container_status_restarts_total{
+                namespace="backend",
+                pod=~"gitops-backend-.*"
+              }[2m]
+            ))

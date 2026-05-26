@@ -101,7 +101,7 @@ spec:
       failureLimit: 1
       provider:
         prometheus:
-          address: http://prometheus-server.monitoring.svc.cluster.local:9090
+          address: http://kps-prometheus.monitoring.svc.cluster.local:9090
           query: |
             sum(increase(
               kube_pod_container_status_restarts_total{
@@ -114,6 +114,43 @@ spec:
 - Single metric: container restart count in the last 2 minutes.
 - An OOMKill produces a restart. One restart in the canary window = analysis fails.
 - Memory-utilization query was considered but rejected: noisier, requires tuning a threshold, and the restart signal is unambiguous.
+
+## Rehearsal in dev (before stage)
+
+Scenario 3b's mechanism (long pauses + AnalysisTemplate) is rehearsed against the dev cluster before running on stage. This is a deliberate departure from the design's two-environment thesis — done once, for video capture — so the demo can be filmed against a single cluster without provisioning stage. The thesis ("dev short canary misses, stage long canary catches") still describes the intended production architecture.
+
+To rehearse, the dev overlay temporarily mirrors stage config: long pauses, analysis steps, OOM env vars on. Two JSON patches in [apps/backend/overlays/dev/kustomization.yaml](apps/backend/overlays/dev/kustomization.yaml) do the work:
+
+```yaml
+# Bug toggle — flip OOM on (same as stage will do).
+- op: replace
+  path: /spec/template/spec/containers/0/env/4/value
+  value: "true" # OOM_ENABLE
+- op: replace
+  path: /spec/template/spec/containers/0/env/5/value
+  value: "3"    # OOM_TIME, in minutes
+
+# Strategy override — replace dev's short canary with stage's long canary + analysis.
+- op: replace
+  path: /spec/progressDeadlineSeconds
+  value: 900
+- op: replace
+  path: /spec/strategy/canary/steps
+  value:
+    - setWeight: 25
+    - pause: { duration: 10m }
+    - analysis:
+        templates:
+          - templateName: backend-memory-health
+    - setWeight: 50
+    - pause: { duration: 10m }
+    - analysis:
+        templates:
+          - templateName: backend-memory-health
+    - setWeight: 100
+```
+
+After capture, both patches revert: OOM env vars back to `"false"` / `"1"`, the strategy/deadline patches removed entirely (so dev inherits the base's short canary). The AnalysisTemplate in [apps/backend/base/70_analysis_template.yaml](apps/backend/base/70_analysis_template.yaml) stays — it's inert when no rollout references it.
 
 ## Where the env vars live
 

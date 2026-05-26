@@ -36,25 +36,41 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/1/value
         value: "green"
-      ###########################
-      # Scenario 1: happy path
       - op: replace
         path: /spec/template/spec/containers/0/env/2/value
         value: "false"
-      ###########################
-      ###########################
-      # Scenario 2 (RDS connection failure): PGDB_ENABLE=true + unreachable PGDB_URL.
-      # /api/healthz checks DB, so readiness fails → progressDeadlineSeconds (180s) trips → rollout aborts at 25% step.
-      # - op: replace
-      #  path: /spec/template/spec/containers/0/env/2/value
-      #  value: "true"
-      ###########################
       - op: replace
         path: /spec/template/spec/containers/0/env/3/value
-        value: "jdbc:postgresql://broken-host.invalid:5432/demo_db"
+        value: "jdbc:postgresql://postgres:5432/demo_db"
+      ###########################
+      # Scenario 3b rehearsal (OOM caught by AnalysisTemplate):
+      # OOM_ENABLE=true, OOM_TIME=3. App OOMs ~3min after start.
+      # Long-canary strategy below holds at 25% for 10min — OOM fires
+      # inside the window, AnalysisTemplate sees the restart, rollout aborts.
+      # NOTE: this is dev temporarily mirroring stage config for video capture.
+      # Revert env/4 to "false" and env/5 to "1", and revert the strategy patch
+      # below, once Scenario 3b has been recorded.
       - op: replace
         path: /spec/template/spec/containers/0/env/4/value
-        value: "false"
+        value: "true"
       - op: replace
         path: /spec/template/spec/containers/0/env/5/value
-        value: "1"
+        value: "3"
+      # Long canary + analysis (rehearsal of stage config — see note above).
+      - op: replace
+        path: /spec/progressDeadlineSeconds
+        value: 900
+      - op: replace
+        path: /spec/strategy/canary/steps
+        value:
+          - setWeight: 25
+          - pause: { duration: 10m }
+          - analysis:
+              templates:
+                - templateName: backend-memory-health
+          - setWeight: 50
+          - pause: { duration: 10m }
+          - analysis:
+              templates:
+                - templateName: backend-memory-health
+          - setWeight: 100

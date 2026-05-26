@@ -65,3 +65,16 @@ kubectl patch namespace external-dns -p '{"metadata":{"finalizers":[]}}' --type=
 
 kubectl patch app platform-600-kube-prometheus-stack -p '{"metadata":{"finalizers":[]}}' --type=merge -n argocd
 ```
+
+- prometheus confirm
+
+
+```sh
+kubectl port-forward -n monitoring svc/kps-prometheus 9090:9090
+
+# browser: http://localhost:9090/query?g0.expr=kube_pod_container_status_restarts_total%7Bnamespace%3D%22backend%22%7D
+
+# or using command
+kubectl run -n monitoring promcheck --rm -it --image=curlimages/curl --restart=Never -- curl -s "http://kps-prometheus.monitoring.svc.cluster.local:9090/api/v1/query?query=kube_pod_container_status_restarts_total%7Bnamespace%3D%22backend%22%7D"
+# {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"kube_pod_container_status_restarts_total","container":"gitops-backend","endpoint":"http","instance":"10.0.11.15:8080","job":"kube-state-metrics","namespace":"backend","pod":"gitops-backend-7454bb5d99-tknhq","service":"kube-prometheus-stack-kube-state-metrics","uid":"b30d3ca4-d7b5-417a-b2bb-a961bc31a80d"},"value":[1779773364.635,"0"]},{"metric":{"__name__":"kube_pod_container_status_restarts_total","container":"gitops-backend","endpoint":"http","instance":"10.0.11.15:8080","job":"kube-state-metrics","namespace":"backend","pod":"gitops-backend-7454bb5d99-cq6fz","service":"kube-prometheus-stack-kube-state-metrics","uid":"c58a0a47-b9b8-4d3f-8690-32c80a8023fc"},"value":[1779773364.635,"0"]},{"metric":{"__name__":"kube_pod_container_status_restarts_total","container":"gitops-backend","endpoint":"http","instance":"10.0.11.15:8080","job":"kube-state-metrics","namespace":"backend","pod":"gitops-backend-7454bb5d99-qdxm9","service":"kube-prometheus-stack-kube-state-metrics","uid":"e59e0391-9a18-4aab-a2be-563fb4d077a7"},"value":[1779773364.635,"0"]},{"metric":{"__name__":"kube_pod_container_status_restarts_total","container":"gitops-backend","endpoint":"http","instance":"10.0.11.15:8080","job":"kube-state-metrics","namespace":"backend","pod":"gitops-backend-7454bb5d99-p6lpg","service":"kube-prometheus-stack-kube-state-metrics","uid":"a4ccf6ce-f6e5-4b1e-b6b8-baa833144dd0"},"value":[1779773364.635,"0"]}]}}pod "promcheck" deleted from monitoring namespace
+```
