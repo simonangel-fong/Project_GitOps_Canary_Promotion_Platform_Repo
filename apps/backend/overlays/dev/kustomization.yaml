@@ -38,7 +38,7 @@ patches:
         value: "blue"
       - op: replace
         path: /spec/template/spec/containers/0/env/2/value
-        value: "true"
+        value: "false"
       - op: replace
         path: /spec/template/spec/containers/0/env/3/value
         value: "jdbc:postgresql://postgres:5432/demo_db"
