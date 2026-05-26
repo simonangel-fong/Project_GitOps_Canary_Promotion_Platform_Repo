@@ -22,7 +22,6 @@ spec:
         - resources-finalizer.argocd.argoproj.io
       labels:
         type: platform
-        app.kubernetes.io/name: platform-100-namespaces
       annotations:
         argocd.argoproj.io/sync-wave: "100"
     spec:
