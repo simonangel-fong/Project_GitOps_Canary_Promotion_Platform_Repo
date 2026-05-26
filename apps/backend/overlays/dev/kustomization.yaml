@@ -19,10 +19,10 @@ patches:
     patch: |-
       - op: replace
         path: /spec/minReplicas
-        value: 2
+        value: 1
       - op: replace
         path: /spec/maxReplicas
-        value: 8
+        value: 2
       - op: replace
         path: /spec/metrics/0/resource/target/averageUtilization
         value: 60
@@ -38,7 +38,7 @@ patches:
         value: "green"
       - op: replace
         path: /spec/template/spec/containers/0/env/2/value
-        value: "false"
+        value: "true"
       - op: replace
         path: /spec/template/spec/containers/0/env/3/value
         value: "jdbc:postgresql://postgres:5432/demo_db"
