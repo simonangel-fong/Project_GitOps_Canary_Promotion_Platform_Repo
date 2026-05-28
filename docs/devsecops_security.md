@@ -1,12 +1,12 @@
 # Local Lint & Security Scan — Developer Guide
 
-Run the same checks locally that `10-ci-check.yml` runs in CI, before opening a PR.
+[Back](../README.md)
 
 ---
 
-## 1. Prerequisites
+## Prerequisites
 
-Install once. Versions match CI (see [.github/actions/lint-check/action.yml](../.github/actions/lint-check/action.yml) and [.github/actions/security-scan/action.yml](../.github/actions/security-scan/action.yml)).
+Install:
 
 | Tool        | Version | Install                                               |
 | ----------- | ------- | ----------------------------------------------------- |
@@ -29,11 +29,11 @@ checkov --version
 
 ---
 
-## 2. Lint
+## Lint Check
 
 Renders manifests, then validates against the Kubernetes schema. CRD schemas are intentionally skipped (`-ignore-missing-schemas`) — Argo CRDs, External Secrets, Karpenter, etc.
 
-### 2.1 Lint a single app overlay
+### Lint a single app overlay
 
 ```bash
 kustomize build apps/backend/overlays/dev | kubeconform -verbose -strict -ignore-missing-schemas -summary -
@@ -47,16 +47,7 @@ kustomize build apps/backend/overlays/dev | kubeconform -verbose -strict -ignore
 # Summary: 7 resources found parsing stdin - Valid: 6, Invalid: 0, Errors: 0, Skipped: 1
 ```
 
-### 2.2 Lint all app overlays
-
-PowerShell:
-
-```powershell
-Get-ChildItem -Directory apps/*/overlays/* | ForEach-Object {
-  Write-Host "==> $_"
-  kustomize build $_.FullName | kubeconform -strict -ignore-missing-schemas -summary -
-}
-```
+### Lint all app overlays
 
 Bash:
 
@@ -67,14 +58,14 @@ for d in apps/*/overlays/*/; do
 done
 ```
 
-### 2.3 Lint a single platform chart
+### Lint a single platform chart
 
 ```bash
 helm lint platform/envoy
 helm template platform/envoy | kubeconform -verbose -strict -ignore-missing-schemas -summary -
 ```
 
-### 2.4 Lint all platform charts
+### Lint all platform charts
 
 Bash:
 
@@ -90,17 +81,12 @@ done
 ### 2.5 Lint bootstrap manifests
 
 ```bash
-# ps
-Get-ChildItem bootstrap/*.yaml | ForEach-Object {
-  kubeconform -verbose -strict -ignore-missing-schemas -summary $_.FullName
-}
-
 kubeconform -verbose -strict -ignore-missing-schemas -summary bootstrap/*.yaml
 ```
 
 ---
 
-## 3. Security scan
+## Security scan
 
 Checkov runs against all three frameworks at once. Skip-list lives in [.checkov.yaml](../.checkov.yaml).
 
@@ -118,13 +104,13 @@ docker run --rm -v "${PWD}:/code" bridgecrew/checkov `
 checkov --directory . --config-file .checkov.yaml --output cli --compact
 ```
 
-### 3.2 Scan a single path
+### Scan a single path
 
 ```bash
 checkov --directory apps/backend --config-file .checkov.yaml --output cli --compact
 ```
 
-### 3.3 Get the check ID for a finding (to add to skip-list)
+### Get the check ID for a finding (to add to skip-list)
 
 The check ID appears in the CLI output as `Check: CKV_K8S_xx`. Add it to `.checkov.yaml` under `skip-check:` with a one-line reason.
 
@@ -133,7 +119,7 @@ skip-check:
   - CKV_K8S_43 # image tag pinned via Kustomize images[]; check sees placeholder
 ```
 
-### 3.4 List all available checks
+### List all available checks
 
 ```bash
 checkov --list
@@ -141,7 +127,7 @@ checkov --list
 
 ---
 
-## 4. Before opening a PR — quick checklist
+## Before opening a PR — quick checklist
 
 ```bash
 # 1. Lint everything changed
