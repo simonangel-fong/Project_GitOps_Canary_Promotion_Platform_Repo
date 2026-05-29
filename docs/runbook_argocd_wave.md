@@ -46,6 +46,26 @@
 | 600  | kube-prometheus-stack (Helm)                      | platform | Prometheus & Grafana controller                              | None hard;                                                 |
 | 900+ | User applications (backend, frontend, …)          | platform | Application workloads                                        | All platform pieces above                                  |
 
+```text
+Wave 110  ── External Secrets Operator
+              v
+Wave 120  ── Karpenter
+              v
+Wave 200  ── AWS Load Balancer Controller
+              v
+Wave 210  ── Envoy Gateway
+              v
+Wave 220  ── ExternalDNS
+              v
+Wave 500  ── Argo Rollouts
+              v
+Wave 600  ── Prometheus Stack
+              v
+Wave 900  ── Backend Application
+              v
+Wave 910  ── Frontend Application
+```
+
 ---
 
 ## Cross-repo dependencies (debugging index)
