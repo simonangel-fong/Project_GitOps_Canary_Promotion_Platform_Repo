@@ -228,3 +228,14 @@ Day 1 is non-negotiable. If OOM doesn't reproduce reliably or Prometheus isn't r
 - Argo Rollouts canary spec: https://argoproj.github.io/argo-rollouts/features/canary/
 - AnalysisTemplate spec: https://argoproj.github.io/argo-rollouts/features/analysis/
 - `progressDeadlineSeconds` semantics: https://argoproj.github.io/argo-rollouts/features/rollout-spec/#progressdeadlineseconds
+
+---
+
+
+case 3a
+
+```sh
+# revert
+git revert 43d66eb --no-edit
+git push
+```

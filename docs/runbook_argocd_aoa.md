@@ -1,78 +1,61 @@
+# Runbook - ArgoCD App-of-Apps
+
+[Back](../README.md)
+
+- [Runbook - ArgoCD App-of-Apps](#runbook---argocd-app-of-apps)
+  - [Access ArgoCD UI](#access-argocd-ui)
+  - [Issue: Delete Get Stuck](#issue-delete-get-stuck)
+  - [Prometheus Metrics](#prometheus-metrics)
+
+---
+
+## Access ArgoCD UI
 
 ```sh
+# update kube config
 aws eks update-kubeconfig --region ca-central-1 --name gitops-demo-dev
 
+# forward
 kubectl port-forward svc/argocd-server 8000:80 -n argocd
-
 kubectl port-forward svc/argo-rollouts-dashboard 3100:3100 -n argo-rollouts
 
+# get initial-admin-secret
 k get secret argocd-initial-admin-secret -n argocd -o yaml
-
+# decode
 echo "" | base64 -d
 
+# sync
 argocd app sync argocd/00-app-of-apps
 
 ```
 
-- envoy
+## Issue: Delete Get Stuck
+
+- Common causes: `metadata.finalizers`
+- Solution: patch by removing finalizers
 
 ```sh
-argocd repo add docker.io/envoyproxy --type helm --name envoyproxy --enable-oci
-
-
-helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.8.0 -n envoy-gateway-system --create-namespace
-
-kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
-
-
-kubectl patch gatewayclass eg \
-  --type=json \
-  -p='[{"op":"remove","path":"/metadata/finalizers"}]'
-
-kubectl patch gatewayclass eg \
-  --type=json \
-  -p='[{"op":"remove","path":"/metadata/finalizers"}]'
-```
-
-```sh
-curl -v -H "Host: gitops-dev.arguswatcher.net" http://gitops-demo-dev-420f0504fde951d4.elb.ca-central-1.amazonaws.com
-curl -v -H "Host: gitops-stage.arguswatcher.net" http://gitops-stage-bfb16a510327f164.elb.ca-central-1.amazonaws.com
-
-
-
-
 kubectl delete application <root-app-name> -n argocd
 
-
-```
-
-
-ESO (-6)
-  └──► Karpenter (-5)
-         └──► ALBC (-4)
-                ├──► Envoy Gateway (-3)
-                │      ├──► External DNS (-2)
-                │      └──► Argo Rollouts (-1)
-                │                 └──► App (0)
-                └──► External DNS (-2)
-
-
-```sh
+# EnvoyProxy
 kubectl patch EnvoyProxy eg-nlb -p '{"metadata":{"finalizers":[]}}' --type=merge -n envoy-gateway-system
+# GatewayClass
 kubectl patch GatewayClass eg -p '{"metadata":{"finalizers":[]}}' --type=merge -n envoy-gateway-system
+# EC2NodeClass
 kubectl patch EC2NodeClass general-node-class -p '{"metadata":{"finalizers":[]}}' --type=merge
+# namespace
 kubectl patch namespace external-dns -p '{"metadata":{"finalizers":[]}}' --type=merge
-
+# app
 kubectl patch app platform-600-kube-prometheus-stack -p '{"metadata":{"finalizers":[]}}' --type=merge -n argocd
 ```
 
+## Prometheus Metrics
 
-- prometheus confirm
-
+- Confirm before Argo Rollouts AnalysisTemplate
 
 ```sh
+# forward
 kubectl port-forward -n monitoring svc/kps-prometheus 9090:9090
-
 # browser: http://localhost:9090/query?g0.expr=kube_pod_container_status_restarts_total%7Bnamespace%3D%22backend%22%7D
 
 # or using command

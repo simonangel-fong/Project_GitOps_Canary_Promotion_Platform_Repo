@@ -1,28 +1,24 @@
-# CI/CD Plan — Project_GitOps_Platform_Repo
+# CI/CD Pipeline
 
-GitOps manifest repo. Argo CD reconciles `dev`, `stage`, `prod` branches onto EKS. GitHub Actions handles lint, scan, and promotion-PR orchestration. Deployment safety is enforced in-cluster by Argo Rollouts + k6 AnalysisRun.
+[Back](../README.md)
 
----
-
-## 1. Goals & Non-Goals
-
-**Goals**
-
-- GitOps flow: branch state = cluster state, reconciled by Argo CD.
-- Lint and security-scan manifests on every change.
-- Automated promotion `dev → stage` (PR auto-merge); human-gated promotion `stage → prod` (PR review).
-- In-cluster deploy verification via Argo Rollouts AnalysisRun (k6).
-- Deploy event notifications via Argo Notifications → GitHub `repository_dispatch` + Slack.
-
-**Non-Goals**
-
-- Application repo pipeline.
-- Infrastructure repo pipeline (EKS, Argo CD install, IAM, Argo Notifications service config).
-- External smoke/load tests (deferred — see §8).
+- [CI/CD Pipeline](#cicd-pipeline)
+  - [Branching \& Environment Model](#branching--environment-model)
+  - [Key Pipelines](#key-pipelines)
+  - [Reusable Composite Actions](#reusable-composite-actions)
+  - [Workflow Specs](#workflow-specs)
+    - [`10-ci-check.yml` — CI](#10-ci-checkyml--ci)
+    - [`20-cd-dev.yml` — promote dev → stage](#20-cd-devyml--promote-dev--stage)
+    - [`21-cd-stage.yml` — promote stage → prod](#21-cd-stageyml--promote-stage--prod)
+    - [`30-cd-prod.yml` — production release announcement](#30-cd-prodyml--production-release-announcement)
+  - [Deployment Verification (in-cluster)](#deployment-verification-in-cluster)
+  - [Secrets, Variables, OIDC](#secrets-variables-oidc)
+  - [Guardrails](#guardrails)
+  - [Diagram](#diagram)
 
 ---
 
-## 2. Branching & Environment Model
+## Branching & Environment Model
 
 | Environment | Branch  | GH Actions Environment | Endpoint                      |
 | ----------- | ------- | ---------------------- | ----------------------------- |
@@ -30,50 +26,44 @@ GitOps manifest repo. Argo CD reconciles `dev`, `stage`, `prod` branches onto EK
 | stage       | `stage` | `stage`                | gitops-stage.arguswatcher.net |
 | prod        | `prod`  | `prod`                 | gitops-prod.arguswatcher.net  |
 
-No `main` branch. Prod approval is enforced by **branch protection on `prod`** (required reviewers on the `stage → prod` PR). Merge to `prod` = deploy via Argo CD.
-
-Per-env values come from GitHub Environment secrets/variables at runtime. Nothing per-env is committed.
-
-**Repo layout:**
-
-```
-.github/      GitHub Actions workflows + composite actions
-apps/         Application manifests (Kustomize: base + overlays)
-platform/     Platform component charts (Helm)
-bootstrap/    App-of-apps definitions (raw YAML)
-docs/         Documentation
-```
+- Prod approval is enforced by **branch protection on `prod`** (required reviewers on the `stage → prod` PR).
+- Merge to `prod` = deploy via Argo CD.
+- Per-env values come from GitHub Environment secrets/variables at runtime.
+  - Nothing per-env is committed.
 
 ---
 
-## 3. Pipeline Inventory
+## Key Pipelines
 
-| #   | Workflow file       | Trigger                                                          | Purpose                                              |
-| --- | ------------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
-| 1   | `10-ci-check.yml`   | push `feature-*`/`hotfix-*`; PR → `dev`/`stage`/`prod`           | Lint + scan. Bot-actor PRs skip scan (tag-only).     |
-| 2   | `20-cd-dev.yml`     | `repository_dispatch: argocd-deployed-dev`; `workflow_dispatch`  | Open auto-merge promotion PR `dev → stage`.          |
-| 3   | `21-cd-stage.yml`   | `repository_dispatch: argocd-deployed-stage`; `workflow_dispatch`| Open human-review promotion PR `stage → prod`.       |
-| 4   | `30-cd-prod.yml`    | `repository_dispatch: argocd-deployed-prod`; `workflow_dispatch` | Post release announcement to Slack.                  |
+| #   | Workflow file     | Trigger                                                           | Purpose                                          |
+| --- | ----------------- | ----------------------------------------------------------------- | ------------------------------------------------ |
+| 1   | `10-ci-check.yml` | push `feature-*`/`hotfix-*`; PR → `dev`/`stage`/`prod`            | Lint + scan. Bot-actor PRs skip scan (tag-only). |
+| 2   | `20-cd-dev.yml`   | `repository_dispatch: argocd-deployed-dev`; `workflow_dispatch`   | Open auto-merge promotion PR `dev → stage`.      |
+| 3   | `21-cd-stage.yml` | `repository_dispatch: argocd-deployed-stage`; `workflow_dispatch` | Open human-review promotion PR `stage → prod`.   |
+| 4   | `30-cd-prod.yml`  | `repository_dispatch: argocd-deployed-prod`; `workflow_dispatch`  | Post release announcement to Slack.              |
 
 Composite actions in [.github/actions/](../.github/actions/) are shared.
 
 ---
 
-## 4. Composite Actions
+## Reusable Composite Actions
 
-| Action          | Tool(s)                                              | Notes                                                              |
-| --------------- | ---------------------------------------------------- | ------------------------------------------------------------------ |
+| Action          | Tool(s)                                                | Notes                                                             |
+| --------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
 | `lint-check`    | `kubeconform`, `kustomize build`, `helm lint/template` | Render `apps/` (kustomize) and `platform/` (helm), then validate. |
-| `security-scan` | `checkov --framework kubernetes,helm,kustomize`      | Single scanner across all three formats.                           |
-| `notify-slack`  | Slack bot token (`SLACK_BOT_TOKEN`)                  | `if: always()` final job in every workflow.                        |
+| `security-scan` | `checkov --framework kubernetes,helm,kustomize`        | Single scanner across all three formats.                          |
+| `notify-slack`  | Slack bot token (`SLACK_BOT_TOKEN`)                    | `if: always()` final job in every workflow.                       |
 
-Image vulnerability scanning lives in the application repo (scans the built image before pushing). Smoke/load testing is delegated to Argo Rollouts AnalysisRun in-cluster (§6).
+Note:
+
+- Image vulnerability scanning lives in the applic`ation re`po (scans the built image before pushing).
+- Smoke/load testing is delegated to `Argo Rollouts Analysis` Run in-cluster.
 
 ---
 
-## 5. Workflow Specs
+## Workflow Specs
 
-### 5.1 `10-ci-check.yml` — CI
+### `10-ci-check.yml` — CI
 
 - **Triggers**
   - `push`: `feature-*`, `hotfix-*` (global path filter).
@@ -89,7 +79,7 @@ Image vulnerability scanning lives in the application repo (scans the built imag
 
 ---
 
-### 5.2 `20-cd-dev.yml` — promote dev → stage
+### `20-cd-dev.yml` — promote dev → stage
 
 - **Triggers**
   - `repository_dispatch`: `argocd-deployed-dev` (fired by Argo Notifications when the `apps-dev` app-of-apps reports `Healthy + Synced`).
@@ -103,7 +93,7 @@ Image vulnerability scanning lives in the application repo (scans the built imag
 
 ---
 
-### 5.3 `21-cd-stage.yml` — promote stage → prod
+### `21-cd-stage.yml` — promote stage → prod
 
 - **Triggers**
   - `repository_dispatch`: `argocd-deployed-stage`.
@@ -117,7 +107,7 @@ Image vulnerability scanning lives in the application repo (scans the built imag
 
 ---
 
-### 5.4 `30-cd-prod.yml` — production release announcement
+### `30-cd-prod.yml` — production release announcement
 
 - **Triggers**
   - `repository_dispatch`: `argocd-deployed-prod`.
@@ -132,39 +122,28 @@ Note: The prod approval gate is on the `stage → prod` PR review (Option A). Me
 
 ---
 
-## 6. Deployment Verification (in-cluster)
+## Deployment Verification (in-cluster)
 
-**Primary gate**: Argo Rollouts `AnalysisTemplate` runs an in-cluster k6 Job against the canary ClusterIP service during rollout. Job exit code 0 = pass → rollout promotes. Non-zero = fail → Rollouts auto-aborts and reverts to the previous ReplicaSet.
+- **Primary gate**:
+  - Argo Rollouts `AnalysisTemplate` runs an in-cluster k6 Job against the canary ClusterIP service during rollout.
+  - Job exit code 0 = pass → rollout promotes. Non-zero = fail → Rollouts auto-aborts and reverts to the previous ReplicaSet.
 
-- AnalysisTemplate CRs and k6 scripts (mounted as ConfigMaps) live in this repo, per-app under `apps/<svc>/base/` and overridden per-env in `apps/<svc>/overlays/<env>/`.
+- `AnalysisTemplate CRs` and `k6 scripts` (mounted as ConfigMaps) live in this repo, per-app under `apps/<svc>/base/` and overridden per-env in `apps/<svc>/overlays/<env>/`.
 - No GitHub Actions deploy gating — by the time `repository_dispatch` fires, the rollout has already passed in-cluster verification.
 
 ---
 
-## 7. Secrets, Variables, OIDC
+## Secrets, Variables, OIDC
 
 This repo's GitHub Actions only needs:
 
-| Name                | Type        | Scope            | Used by         |
-| ------------------- | ----------- | ---------------- | --------------- |
-| `SLACK_BOT_TOKEN`   | Secret      | Repo or env      | `notify-slack`  |
-| `GITHUB_TOKEN`      | Built-in    | Per-workflow     | Promotion PRs   |
+| Name              | Type     | Scope        | Used by        |
+| ----------------- | -------- | ------------ | -------------- |
+| `SLACK_BOT_TOKEN` | Secret   | Repo or env  | `notify-slack` |
+| `GITHUB_TOKEN`    | Built-in | Per-workflow | Promotion PRs  |
 
-**No AWS OIDC**: this repo does not touch AWS. Argo CD (in-cluster, configured by the infra repo) performs all cluster operations.
-
-**Cross-repo writes**: the application repo opens image-tag PRs into this repo using its own GitHub App token (owned by the app repo).
-
-**Argo Notifications split (industry "Platform as a Product" pattern):**
-
-| Component                            | Owner            | Change frequency |
-| ------------------------------------ | ---------------- | ---------------- |
-| Argo Notifications controller        | Infra repo       | Rare             |
-| `argocd-notifications-secret` (Slack bot token, GitHub App key) | Infra repo | Rare |
-| `service.*` config in `argocd-notifications-cm`                  | Infra repo | Rare |
-| `template.*` + `trigger.*` config in `argocd-notifications-cm`   | This repo  | Frequent |
-| Per-Application `subscriptions` annotations                      | This repo  | Frequent |
-
-The two `argocd-notifications-cm` halves are merged at apply time (Kustomize `configMapGenerator` with `behavior: merge`, or equivalent).
+- **No AWS OIDC**: this repo does not touch AWS. Argo CD (in-cluster, configured by the infra repo) performs all cluster operations.
+- **Cross-repo writes**: the application repo opens image-tag PRs into this repo using its own GitHub App token (owned by the app repo).
 
 **Argo Notifications → GitHub contract:**
 
@@ -182,7 +161,7 @@ The two `argocd-notifications-cm` halves are merged at apply time (Kustomize `co
 
 ---
 
-## 8. Guardrails
+## Guardrails
 
 **Branch protection (`dev`, `stage`, `prod`):**
 
@@ -210,17 +189,7 @@ App teams own their `apps/<svc>/` directory (CKAD-level K8s skills assumed: Depl
 
 ---
 
-## 9. Open Items / Follow-Ups
-
-- **External smoke + load tests** in GitHub Actions (k6 against the public endpoint) as a complementary post-rollout check.
-- **Per-job path filters** (using `dorny/paths-filter`) to lint only affected `apps/<svc>/` or `platform/<chart>/` subtrees.
-- **Drift detection** is handled by Argo CD itself (out-of-sync alerts via Notifications) — no separate workflow planned.
-- **`argocd-notifications-cm` merge mechanism** to be confirmed with the infra repo (Kustomize merge vs Helm extras vs ApplicationSet generators).
-- **Admission policies** (Kyverno or OPA Gatekeeper) for cluster-wide safety guarantees — planned in the platform layer, out of scope here.
-
----
-
-## 10. Diagram
+## Diagram
 
 ```
 =========================  CI  =========================

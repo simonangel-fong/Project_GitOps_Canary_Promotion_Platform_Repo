@@ -1,4 +1,10 @@
-# Argo CD & Argo Rollouts — Notification Setup Plan
+# Runbook - Argo CD & Argo Rollouts Notification
+
+[Back](../README.md)
+
+- ## [Runbook - Argo CD & Argo Rollouts Notification](#runbook---argo-cd--argo-rollouts-notification)
+
+---
 
 ## Overview
 
@@ -17,22 +23,20 @@ Two separate notification engines, each watching different concerns:
 
 ## Responsibility Boundary
 
-```
-Terraform (infra bootstrap)
-  └─ Deploys ArgoCD via Helm
-  └─ Enables notifications controller flag
-  └─ Stores Slack token in AWS SSM Parameter Store
+- `Terraform` (infra bootstrap)
+  - Deploys `ArgoCD` via Helm
+    - Enables notifications controller flag
+  - Stores Slack token in AWS SSM Parameter Store
 
-ArgoCD (platform layer — GitOps)
-  └─ Deploys Argo Rollouts via Helm Application
-  └─ Manages argocd-notifications-cm (ConfigMap)
-  └─ Manages argo-rollouts-notification-configmap (ConfigMap)
-  └─ Manages ExternalSecret (ESO) to pull Slack token into both namespaces
-```
+- `ArgoCD` (platform layer — GitOps)
+  - Deploys `Argo Rollouts` via Helm Application
+  - Manages argocd-notifications-cm (`ConfigMap`)
+  - Manages argo-rollouts-notification-configmap (`ConfigMap`)
+  - Manages `External-Secret (ESO)` to pull `Slack` token into both namespaces
 
 ---
 
-## What Triggers What
+## Notifications Triggers
 
 ### ArgoCD Notifications — covers ALL Applications (add-ons + workloads)
 
@@ -43,6 +47,8 @@ ArgoCD (platform layer — GitOps)
 | App sync succeeded      | `on-sync-succeeded`  | `#platform-deployments` |
 
 > Add-ons (ESO, Karpenter, ALBC, ExternalDNS, Envoy) are plain ArgoCD Applications — their health is fully covered here. Do NOT put infrastructure add-ons through Argo Rollouts.
+
+---
 
 ### Argo Rollouts Notifications — covers application Rollout CRDs only
 
@@ -58,31 +64,30 @@ ArgoCD (platform layer — GitOps)
 
 ## Slack Channel Strategy
 
-```
-#platform-alerts        ← High-signal failures requiring immediate human action
-                           (sync failures, health degraded, analysis errors)
-
-#platform-deployments   ← Informational sync events for all apps and add-ons
-                           (succeeded syncs, routine updates)
-
-#deployments            ← Canary progression events for application teams
-                           (step completions, promotions, paused gates)
-```
+| Slack Channel           | Responsibility                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `#platform-alerts`      | High-signal failures requiring immediate human action (sync failures, health degraded, analysis errors) |
+| `#platform-deployments` | Informational sync events for all apps and add-ons (succeeded syncs, routine updates)                   |
+| `#deployments`          | Canary progression events for application teams (step completions, promotions, paused gates)            |
 
 ---
 
-## Implementation Steps
+## Configuration Steps
 
 ### Step 1 — Store Slack Token in AWS SSM Parameter Store
 
 Before any Kubernetes config, store the credential in AWS. This keeps secrets out of Git and Terraform state.
 
-```bash
-aws ssm put-parameter \
-  --name /project/env/slack/token \
-  --value "xoxb-your-slack-bot-token" \
-  --type SecureString \
-  --region <your-region>
+```hcl
+resource "aws_ssm_parameter" "argocd_slack_token" {
+  name        = local.eso_param_slack
+  description = "Slack bot OAuth token (xoxb-...) consumed by ArgoCD notifications via ESO"
+  type        = "SecureString"
+  value       = var.slack_bot_token
+
+  tags = local.tags
+}
+
 ```
 
 This parameter will be pulled by ESO into both namespaces (`argocd` and `argo-rollouts`).
@@ -91,7 +96,9 @@ This parameter will be pulled by ESO into both namespaces (`argocd` and `argo-ro
 
 ### Step 2 — Enable ArgoCD Notifications Controller in Terraform
 
-ArgoCD is deployed via Terraform + Helm. The only change needed here is enabling the notifications controller flag and setting the ArgoCD URL. **No notification content (ConfigMaps, secrets) is managed by Terraform** — that stays in Git/GitOps.
+- `ArgoCD` is deployed via `Terraform` + `Helm`.
+  - The only change needed here is enabling the notifications controller flag.
+  - **No notification content (ConfigMaps, secrets) is managed by Terraform** — that stays in Git/GitOps.
 
 ```hcl
 resource "helm_release" "argocd" {
@@ -103,7 +110,6 @@ resource "helm_release" "argocd" {
   values = [<<-EOT
     notifications:
       enabled: true
-      argocdUrl: "https://argocd.your-domain.com"
   EOT
   ]
 }
@@ -128,7 +134,7 @@ metadata:
 spec:
   refreshInterval: 1h
   secretStoreRef:
-    name: aws-secretsmanager # or your ClusterSecretStore name
+    name: aws-secretsmanager # or aws-ssm
     kind: ClusterSecretStore
   target:
     name: argocd-notifications-secret
@@ -186,7 +192,7 @@ data:
   # ... other triggers
 ```
 
-Place this manifest in your platform GitOps repo alongside other ArgoCD configurations.
+Place this manifest in the platform GitOps repo alongside other ArgoCD configurations.
 
 ---
 
@@ -201,7 +207,7 @@ notifications:
   configmap:
     create: true
   secret:
-    create: false   # ESO owns argo-rollouts-notification-secret
+    create: false # ESO owns argo-rollouts-notification-secret
 
   notifiers:
     service.slack: |
@@ -243,9 +249,9 @@ In the original plan this was a separate ConfigMap Application. That approach ca
 
 ---
 
-### Step 7 — Annotate Rollout Resources
+### Step 7 — Annotate Rollout Resources with Subscription
 
-Subscriptions for Argo Rollouts notifications go on the **Rollout resource** (not the ArgoCD Application). Add annotations in your application Helm chart or manifest:
+Subscriptions for Argo Rollouts notifications go on the **Rollout resource** (not the ArgoCD Application). Add annotations in the application Helm chart or manifest:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -309,27 +315,11 @@ aws-ssm/
 
 ---
 
-## Summary
+## Debug: Verify a Slack bot token
 
+```bash
+# Verify a Slack bot token against the Slack API.
+# Export the token first — never paste it into a tracked file:
+#   export token=xoxb-...
+curl -H "Authorization: Bearer $token" https://slack.com/api/auth.test
 ```
-Step 1  AWS SSM          Store Slack token securely
-Step 2  Terraform        Enable notifications controller in ArgoCD Helm release only
-Step 3  GitOps (ESO)     ExternalSecrets pull SSM token into argocd + argo-rollouts namespaces
-Step 4  GitOps           argocd-notifications-cm — global triggers for all Applications
-Step 5+6 GitOps          Argo Rollouts Helm Application with notifiers/templates/triggers inlined as Helm values
-                          (the chart owns the ConfigMap; no separate Application)
-Step 7  App manifests    Annotate Rollout CRDs to subscribe to specific channels
-Step 8  Ops              Validate controllers, secrets, and test a notification
-```
-
-Terraform touches only Step 2. Everything else is GitOps or AWS console/CLI.
-
----
-
-## Implementation pitfalls (lessons learned)
-
-- **`argo-rollouts-notification-configmap` has exactly one owner.** The upstream chart renders it unconditionally — keep notification content inline in the chart's Helm values, never in a sibling Application. A second Application targeting the same ConfigMap triggers "resource is part of two applications" warnings and an overwrite race on every sync.
-- **Argo notifications secret syntax is `$secretKey`, not `${secretKey}`.** Curly braces are not recognized by either notifications engine; the literal string `${slack-token}` will be POSTed to Slack and rejected as `invalid_auth`.
-- **There is no `notifications.enabled` flag for Argo Rollouts.** The notifications engine is built into the controller and always active. Argo CD does have a separate notifications controller toggled in the Helm chart (`notifications.enabled: true`) — don't conflate the two.
-- **The ESO ExternalSecret must exist in the target namespace before the controller starts**, otherwise the controller fails to resolve `$slack-token` on first reconciliation. Pre-create namespaces at an early wave and let ESO sync ahead of the Helm install.
-- **Never paste a real Slack token into README / docs.** GitHub Push Protection will block the push and the token must be rotated even if the push was rejected (it has already left your machine in the pack file).

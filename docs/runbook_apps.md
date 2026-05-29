@@ -1,17 +1,30 @@
+# Runbook - Debug Applications
+
+[Back](../README.md)
+
+- [Runbook - Debug Applications](#runbook---debug-applications)
+  - [Debug Connection](#debug-connection)
+  - [Argo Rollouts](#argo-rollouts)
+
+---
+
+## Debug Connection
 
 ```sh
+# forward backend
 kubectl port-forward svc/gitops-backend 8080:8080 -n backend
 
+# forward frontend
 kubectl port-forward svc/gitops-frontend 8800:80 -n frontend
 
-
-
-
-curl -H "host:gitops-dev.arguswatcher.net" gitops-demo-dev-76d293eb919aace1.elb.ca-central-1.amazonaws.com
+# test against load balancer dns
+curl -v -H "Host: gitops-dev.arguswatcher.net" http://gitops-demo-dev-420f0504fde951d4.elb.ca-central-1.amazonaws.com
+curl -v -H "Host: gitops-stage.arguswatcher.net" http://gitops-stage-bfb16a510327f164.elb.ca-central-1.amazonaws.com
 ```
 
-argo rollouts
+---
 
+## Argo Rollouts
 
 ```sh
 kubectl argo rollouts get rollout gitops-backend -n backend
@@ -100,24 +113,4 @@ kubectl get events -n backend --sort-by='.lastTimestamp'
 # 3m39s       Warning   RolloutAborted         rollout/gitops-backend                   Rollout aborted update to revision 13
 # 3m27s       Warning   Unhealthy              pod/gitops-backend-6bb69bd6bb-bqrl6      Readiness probe failed: Get "http://10.0.12.218:8080/api/healthz": dial tcp 10.0.12.218:8080: connect: connection refused
 
-```
-
-case 3a
-
-```sh
-# revert
-git revert 43d66eb --no-edit
-git push
-```
-
-
----
-
-notification:
-
-```bash
-# Verify a Slack bot token against the Slack API.
-# Export the token first — never paste it into a tracked file:
-#   export token=xoxb-...
-curl -H "Authorization: Bearer $token" https://slack.com/api/auth.test
 ```
