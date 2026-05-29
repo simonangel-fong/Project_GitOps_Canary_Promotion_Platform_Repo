@@ -6,7 +6,7 @@ resources:
 images:
   - name: gitops-risk-control-backend
     newName: docker.io/simonangelfong/gitops-risk-control-backend
-    newTag: v0.3.1
+    newTag: v0.3.3
 labels:
   - includeSelectors: false
     pairs:
